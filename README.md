@@ -2,6 +2,8 @@
 
 A public draft by Krein about performance lessons from Handoff.
 
+[Read the article](https://handoff-performance-lessons.fkrein.workers.dev/).
+
 Plain HTML, local fonts, and seven selected image-model illustrations. No build step, backend, or CI.
 
 ## Files
