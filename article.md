@@ -26,7 +26,7 @@ We already had the data. But some GraphQL responses were missing an entity's `id
 
 Auth, navigation, permissions, and billing would fetch again. One missing ID caused a cascade of work that shouldn't have happened.
 
-We added IDs to queries and manual cache writes, alongside query and fetch-policy fixes. Fewer unnecessary requests, less repeated work, and less pressure on the server. The difference was especially noticeable on Android.
+We added IDs to queries and manual cache writes, alongside query and fetch-policy fixes. Fewer unnecessary requests, less repeated work, and less pressure on the server.
 
 Check the lint rules for your tools. GraphQL ESLint's [require-selections](https://the-guild.dev/graphql/eslint/rules/require-selections) catches missing `id` selections when the type has one. We enabled it. A simple lint error would have saved a lot of this headache.
 
