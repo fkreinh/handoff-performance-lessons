@@ -1578,8 +1578,9 @@
                 moved between pages through the sidebar. Those links used
                 <code>router.push()</code>. Even going home added a page instead
                 of clearing the old stack. Screens and their observers kept
-                accumulating. Freezing reduced rendering, but didn&#x27;t
-                release those subscriptions.
+                accumulating. On native,
+                <a href="https://reactnavigation.org/docs/stack-navigator/#freezeonblur"><code>enableFreeze()</code></a>
+                reduced rendering, but didn&#x27;t release subscriptions.
               </p>
               <p>
                 We had to clear the stack explicitly when a main root page
