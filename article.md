@@ -38,7 +38,7 @@ During longer web sessions, everything started to crawl. On mobile, stacking scr
 
 Our web app used the same React Navigation stack, but people moved between pages through the sidebar. Those links used `router.push()`. Even going home added a page instead of clearing the old stack. Screens and their observers kept accumulating. Freezing reduced rendering, but didn't release those subscriptions.
 
-We had to clear the stack explicitly when a main root page became visible. Removing those trees released their observers. One local comparison dropped from **3,671 active queries to 298**, with the same **105 cache objects**.
+We had to clear the stack explicitly when a main root page became visible. Removing those trees released their observers. One local comparison dropped from **3,671 query observers to 298**, with the same **105 cache objects**.
 
 The native pattern was useful, but our web navigation needed different cleanup.
 
@@ -70,7 +70,7 @@ A single import can bring a whole chain of app code into a DOM bundle. Our edito
 
 ![Tactile ceramic underline hooks contrast a dense dependency mass with a single self-contained green form.](public/images/06-follow-the-import.png)
 
-Don't assume the bundler will strip everything you aren't using. Expo Atlas showed what actually got included. We isolated the helper and removed unnecessary `use dom` directives. Together, those changes reduced reported DOM bundle output from **27.6 MB to 1.7 MB**.
+Don't assume the bundler will strip everything you aren't using. [Expo Atlas](https://docs.expo.dev/guides/analyzing-bundles/) showed what actually got included. We isolated the helper and removed unnecessary `use dom` directives. Together, those changes reduced reported DOM bundle output from **27.6 MB to 1.7 MB**.
 
 Keep these imports small and self-contained. Sometimes duplicating a few lines is better than dragging a much larger bundle along with them.
 
@@ -80,7 +80,7 @@ We had already moved to Go-based TypeScript, and a cold check still took **79 se
 
 ![Two identical green marbles travel a sprawling coiled track and a short direct track, arriving at identical output molds.](public/images/07-less-type-work.png)
 
-_Cold checks on the same setup, single-threaded TypeScript 7.0.2._
+_Our before-and-after: cold checks on the same setup, single-threaded TypeScript 7.0.2. Microsoft's VS Code benchmark used four checker workers on a different setup._
 
 Our Prisma types described configurations we didn't use. Narrowing them in just a few files brought that same check down to **13 seconds**, with **53 million fewer type instantiations** and identical JavaScript. Cached runs with no code changes now take about **2 seconds**.
 
@@ -88,7 +88,7 @@ That's a big win for AI coding too. Less waiting between editing and checking me
 
 ## The small wins add up
 
-These are some of the most memorable ones. But performance is often death by a hundred paper cuts: another observer, another hidden render, another copy of the same data. Each looks harmless until they add up.
+These are some of the most memorable ones. But performance is often death by a hundred paper cuts: a missing database index, another observer, another hidden render, another copy of the same data. Each looks harmless until they add up.
 
 We chip away at it whenever we can. There are hundreds of smaller fixes across the team: one less render, a tighter query, less work on the JS thread. That steady work shapes how the product feels every day.
 

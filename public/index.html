@@ -1586,7 +1586,7 @@
                 We had to clear the stack explicitly when a main root page
                 became visible. Removing those trees released their observers.
                 One local comparison dropped from
-                <strong>3,671 active queries to 298</strong>, with the same
+                <strong>3,671 query observers to 298</strong>, with the same
                 <strong>105 cache objects</strong>.
               </p>
               <p>
@@ -1683,7 +1683,9 @@
               </figure>
               <p>
                 Don&#x27;t assume the bundler will strip everything you
-                aren&#x27;t using. Expo Atlas showed what actually got included.
+                aren&#x27;t using.
+                <a href="https://docs.expo.dev/guides/analyzing-bundles/">Expo Atlas</a>
+                showed what actually got included.
                 We isolated the helper and removed unnecessary
                 <code>use dom</code> directives. Together, those changes reduced
                 reported DOM bundle output from
@@ -1718,8 +1720,9 @@
                   decoding="async"
                 />
                 <figcaption>
-                  Cold checks on the same setup, single-threaded TypeScript
-                  7.0.2.
+                  Our before-and-after: cold checks on the same setup,
+                  single-threaded TypeScript 7.0.2. Microsoft's VS Code benchmark
+                  used four checker workers on a different setup.
                 </figcaption>
               </figure>
               <p>
@@ -1741,9 +1744,9 @@
               <h2 id="closing">The small wins add up</h2>
               <p>
                 These are some of the most memorable ones. But performance is
-                often death by a hundred paper cuts: another observer, another
-                hidden render, another copy of the same data. Each looks
-                harmless until they add up.
+                often death by a hundred paper cuts: a missing database index,
+                another observer, another hidden render, another copy of the
+                same data. Each looks harmless until they add up.
               </p>
               <p>
                 We chip away at it whenever we can. There are hundreds of
