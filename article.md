@@ -36,7 +36,7 @@ During longer web sessions, everything started to crawl. On mobile, stacking scr
 
 ![Sculptural stack of retained screens and observer beads resolves into one clean root slab.](public/images/03-reset-the-stack.png)
 
-Our web app used the same React Navigation stack, but people moved between pages through the sidebar. Those links used `router.push()`. Even going home added a page instead of clearing the old stack. Screens and their observers kept accumulating. Freezing reduced rendering, but didn't release those subscriptions.
+Our web app used the same React Navigation stack, but people moved between pages through the sidebar. Those links used `router.push()`. Even going home added a page instead of clearing the old stack. Screens and their observers kept accumulating. [Freezing](https://reactnavigation.org/docs/stack-navigator/#freezeonblur) reduced rendering, but didn't release those subscriptions.
 
 We had to clear the stack explicitly when a main root page became visible. Removing those trees released their observers. One local comparison dropped from **3,671 query observers to 298**, with the same **105 cache objects**.
 
