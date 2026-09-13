@@ -74,7 +74,7 @@ Don't assume the bundler will strip everything you aren't using. [Expo Atlas](ht
 
 Keep these imports small and self-contained. Sometimes duplicating a few lines is better than dragging a much larger bundle along with them.
 
-## Bonus: a few type changes, a much faster check
+## Bonus: 53 million fewer type instantiations
 
 We had already moved to Go-based TypeScript, and a cold check still took **79 seconds**. Microsoft's [TypeScript 7 benchmarks](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/) had VS Code building in about 10 seconds. If VS Code could do that, why was our Node server taking over a minute just to check types? That was worth digging into.
 
