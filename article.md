@@ -4,7 +4,7 @@ Adding an ID. Resetting a navigation stack. Moving a calculation up one level. I
 
 Some of our biggest performance wins at Handoff came from changes like these. Obvious in hindsight. Harder to spot when each piece of code looks reasonable on its own.
 
-Here are six memorable ones from the last year and a half across our backend and our [universal React Native app](https://www.handoff.ai/tech/shipping-a-universal-expo-app-to-web-ios-and-android-in-production-lessons-from-handoff), built with Expo for web, iOS, and Android. Plus a TypeScript DX bonus.
+Here are six memorable ones from the last year and a half across our backend and our [universal React Native app](https://www.handoff.ai/tech/shipping-a-universal-expo-app-to-web-ios-and-android-in-production-lessons-from-handoff). Plus a TypeScript DX bonus.
 
 ## 1. Count the calculations, not just the queries
 
@@ -38,7 +38,7 @@ During longer web sessions, everything started to crawl. On mobile, stacking scr
 
 Our web app used the same React Navigation stack, but people moved between pages through the sidebar. Those links used `router.push()`. Even going home added a page instead of clearing the old stack. Screens and their observers kept accumulating. Freezing reduced rendering, but didn't release those subscriptions.
 
-We had to clear the stack explicitly when a main root page became visible. Removing those trees released their observers. One local comparison dropped from **3,671 active queries to 298**, with the same **105 cache objects**. We also removed unnecessary tracking subscriptions.
+We had to clear the stack explicitly when a main root page became visible. Removing those trees released their observers. One local comparison dropped from **3,671 active queries to 298**, with the same **105 cache objects**.
 
 The native pattern was useful, but our web navigation needed different cleanup.
 
@@ -49,8 +49,6 @@ A lot of React performance comes down to this: render less, less often. Only do 
 ![Tactile green chambers contrast a closed chamber wasting energy on repeated internal work with a calm chamber preserving an identical arrangement.](public/images/04-render-less.png)
 
 Our closed dialogs and bottom sheets kept their forms mounted, which preserved state. Even with [React Compiler](https://react.dev/learn/react-compiler), those trees can still rerender when state or context changes, while nobody is using them. We used [react-freeze](https://github.com/software-mansion/react-freeze) to pause rendering without unmounting them: keep the state, resume before opening.
-
-The boundary matters. A follow-up dialog needs to live outside its frozen parent, and video needs explicit teardown because freezing React doesn't stop playback.
 
 The UI already worked. This made it cheaper to keep around. That's often the game with React performance: give it less to do.
 

@@ -1476,8 +1476,7 @@
             <p>
               Here are six memorable ones from the last year and a half across
               our backend and our
-              <a href="https://www.handoff.ai/tech/shipping-a-universal-expo-app-to-web-ios-and-android-in-production-lessons-from-handoff">universal React Native app</a>,
-              built with Expo for web, iOS, and Android. Plus a TypeScript DX bonus.
+              <a href="https://www.handoff.ai/tech/shipping-a-universal-expo-app-to-web-ios-and-android-in-production-lessons-from-handoff">universal React Native app</a>. Plus a TypeScript DX bonus.
             </p>
             <section class="essay-section">
               <h2 id="calculations">
@@ -1588,8 +1587,7 @@
                 became visible. Removing those trees released their observers.
                 One local comparison dropped from
                 <strong>3,671 active queries to 298</strong>, with the same
-                <strong>105 cache objects</strong>. We also removed unnecessary
-                tracking subscriptions.
+                <strong>105 cache objects</strong>.
               </p>
               <p>
                 The native pattern was useful, but our web navigation needed
@@ -1621,11 +1619,6 @@
                 <a href="https://github.com/software-mansion/react-freeze">react-freeze</a>
                 to pause rendering without unmounting them: keep the state,
                 resume before opening.
-              </p>
-              <p>
-                The boundary matters. A follow-up dialog needs to live outside
-                its frozen parent, and video needs explicit teardown because
-                freezing React doesn&#x27;t stop playback.
               </p>
               <p>
                 The UI already worked. This made it cheaper to keep around.
