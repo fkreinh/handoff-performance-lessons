@@ -92,6 +92,6 @@ These are some of the most memorable ones. But performance is often death by a h
 
 We chip away at it whenever we can. There are hundreds of smaller fixes across the team: one less render, a tighter query, less work on the JS thread. That steady work shapes how the product feels every day.
 
-Not all fast software is good, but [all good software is fast](https://x.com/tobi/status/1787139157078188180). People should be able to get their work done without waiting on ours.
+Not all fast software is good, but [all good software is fast](https://x.com/tobi/status/1787139157078188180). Contractors should be able to get their work done without waiting on ours.
 
 That's the standard we strive for at Handoff.
