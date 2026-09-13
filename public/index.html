@@ -1475,8 +1475,9 @@
             </p>
             <p>
               Here are six memorable ones from the last year and a half across
-              our backend and our web and React Native app. Plus a TypeScript DX
-              bonus.
+              our backend and our
+              <a href="https://www.handoff.ai/tech/shipping-a-universal-expo-app-to-web-ios-and-android-in-production-lessons-from-handoff">universal React Native app</a>,
+              built with Expo for web, iOS, and Android. Plus a TypeScript DX bonus.
             </p>
             <section class="essay-section">
               <h2 id="calculations">
@@ -1506,10 +1507,9 @@
                 Ten times the rows can mean a hundred times the work.
               </p>
               <p>
-                We moved the calculation to <code>Estimate.rows</code>, batched
-                the supporting data, and let field resolvers return precomputed
-                values. The repeated traversal became one shared pass. Totals,
-                rounding, and zero values still had to hold up.
+                We calculated the estimate once, loaded the supporting data in
+                batches, and reused the results for each row. Totals, rounding,
+                and zero values still had to hold up.
               </p>
               <p>
                 Count calculations as well as database calls. Caching a query
@@ -1614,10 +1614,13 @@
               </figure>
               <p>
                 Our closed dialogs and bottom sheets kept their forms mounted,
-                which preserved state. But their trees and providers could still
-                rerender while nobody was using them. Freezing those inactive
-                trees was a straightforward win: keep the state, skip
-                unnecessary rendering, and resume before opening.
+                which preserved state. Even with
+                <a href="https://react.dev/learn/react-compiler">React Compiler</a>,
+                those trees can still rerender when state or context changes,
+                while nobody is using them. We used
+                <a href="https://github.com/software-mansion/react-freeze">react-freeze</a>
+                to pause rendering without unmounting them: keep the state,
+                resume before opening.
               </p>
               <p>
                 The boundary matters. A follow-up dialog needs to live outside
