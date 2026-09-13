@@ -4,7 +4,7 @@ Adding an ID. Resetting a navigation stack. Moving a calculation up one level. I
 
 Some of our biggest performance wins at Handoff came from changes like these. Obvious in hindsight. Harder to spot when each piece of code looks reasonable on its own.
 
-Here are six memorable ones from the last year and a half across our backend and our [universal React Native app](https://www.handoff.ai/tech/shipping-a-universal-expo-app-to-web-ios-and-android-in-production-lessons-from-handoff). Plus a TypeScript DX bonus.
+Here are six memorable ones from the last year across our backend and our [universal React Native app](https://www.handoff.ai/tech/shipping-a-universal-expo-app-to-web-ios-and-android-in-production-lessons-from-handoff). Plus a TypeScript DX bonus.
 
 ## 1. Count the calculations, not just the queries
 
