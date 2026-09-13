@@ -1,0 +1,1798 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Six performance lessons from Handoff: repeated calculations, cache identity, retained screens, hidden sheets, serialized copies, and DOM bundles. Plus a TypeScript DX bonus."
+    />
+    <meta name="robots" content="noindex" />
+    <title>Small changes, big performance wins — Handoff Engineering</title>
+    <style>
+      @font-face {
+        font-family: Instrument;
+        src: url(serif.woff2) format('woff2');
+        font-display: swap;
+      }
+      @font-face {
+        font-family: DM;
+        src: url(sans.woff2) format('woff2');
+        font-weight: 100 900;
+        font-display: swap;
+      }
+      :root {
+        --bg: #f6f4ee;
+        --ink: #252920;
+        --muted: #707367;
+        --line: #dedfd4;
+        --orange: #bc4e2b;
+        --green: #3c5747;
+        --paper: #fffef9;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 100px;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: DM, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: inherit;
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+      }
+      header {
+        height: 76px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        padding: 0 4.4vw;
+        gap: 16px;
+      }
+      .brand {
+        text-decoration: none;
+        font-weight: 750;
+        letter-spacing: -0.8px;
+        font-size: 24px;
+      }
+      .brand span {
+        font-weight: 400;
+        color: var(--muted);
+        font-size: 13px;
+        letter-spacing: 0;
+        margin-left: 18px;
+      }
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        font-size: 12px;
+      }
+      .top-actions a {
+        text-decoration: none;
+      }
+      .draft-pill {
+        border: 1px solid var(--line);
+        border-radius: 30px;
+        padding: 6px 12px;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .print {
+        border: 0;
+        background: none;
+        padding: 8px;
+        color: var(--muted);
+      }
+      .reading-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        background: var(--orange);
+        width: 0;
+        z-index: 20;
+      }
+      .hero {
+        max-width: 1180px;
+        margin: auto;
+        padding: 76px 36px 54px;
+      }
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--orange);
+        font-size: 11px;
+        font-weight: 650;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .eyebrow:before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        background: var(--orange);
+        border-radius: 50%;
+      }
+      h1 {
+        font-family: Instrument, Georgia, serif;
+        font-size: clamp(60px, 7.7vw, 104px);
+        line-height: 0.98;
+        letter-spacing: -2.8px;
+        font-weight: 400;
+        margin: 26px 0 25px;
+      }
+      h1 em {
+        font-weight: 400;
+        color: var(--orange);
+      }
+      .dek {
+        font-size: 19px;
+        line-height: 1.6;
+        color: #606456;
+        max-width: 550px;
+        margin-bottom: 28px;
+      }
+      .byline {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 12px;
+      }
+      .avatar {
+        height: 34px;
+        width: 34px;
+        background: #e1e6d6;
+        color: var(--green);
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        font-size: 10px;
+        font-weight: 650;
+      }
+      .byline strong {
+        font-weight: 650;
+      }
+      .byline small {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        margin-top: 3px;
+      }
+      .byline .readtime {
+        border-left: 1px solid var(--line);
+        padding-left: 16px;
+        margin-left: 8px;
+        color: var(--muted);
+      }
+      .hero-rule {
+        display: flex;
+        justify-content: space-between;
+        border-top: 1px solid var(--ink);
+        padding-top: 12px;
+        margin-top: 44px;
+        color: var(--muted);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1.3px;
+      }
+      .layout {
+        max-width: 1180px;
+        margin: auto;
+        display: grid;
+        grid-template-columns: 205px minmax(0, 730px);
+        column-gap: 66px;
+        padding: 0 36px 100px;
+        align-items: start;
+      }
+      .contents {
+        position: sticky;
+        top: 44px;
+        padding-top: 10px;
+      }
+      .contents-title {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1.8px;
+        color: var(--muted);
+        margin-bottom: 20px;
+      }
+      .contents a {
+        display: flex;
+        gap: 10px;
+        text-decoration: none;
+        font-size: 11px;
+        line-height: 1.5;
+        margin: 0 0 17px;
+        color: var(--muted);
+        transition: color 0.2s;
+      }
+      .contents a span {
+        font-size: 10px;
+        min-width: 16px;
+        font-variant-numeric: tabular-nums;
+      }
+      .contents a:hover,
+      .contents a.active {
+        color: var(--orange);
+      }
+      .contents .bottom-note {
+        font-size: 10px;
+        line-height: 1.7;
+        color: #929487;
+        border-top: 1px solid var(--line);
+        padding-top: 18px;
+        margin-top: 26px;
+        max-width: 165px;
+      }
+      article {
+        min-width: 0;
+        font-size: 16px;
+        line-height: 1.85;
+      }
+      article > p:first-child {
+        font-size: 23px;
+        line-height: 1.5;
+        letter-spacing: -0.3px;
+        margin-top: 0;
+      }
+      p {
+        margin: 0 0 23px;
+      }
+      strong {
+        font-weight: 650;
+      }
+      h2 {
+        font-family: Instrument, Georgia, serif;
+        font-weight: 400;
+        font-size: 42px;
+        line-height: 1.12;
+        letter-spacing: -0.6px;
+        margin: 0 0 26px;
+        max-width: 650px;
+      }
+      .essay-section {
+        margin-top: 65px;
+        padding-top: 36px;
+        border-top: 1px solid var(--line);
+      }
+      .essay-section > p:last-child strong {
+        font-weight: 400;
+      }
+      code {
+        font-size: 0.86em;
+        background: #eaece2;
+        padding: 2px 5px;
+        border-radius: 4px;
+      }
+      ol {
+        padding-left: 23px;
+        margin: 20px 0 28px;
+      }
+      li {
+        padding-left: 6px;
+        margin-bottom: 9px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 12px;
+        line-height: 1.5;
+        margin: 28px 0 32px;
+      }
+      th {
+        text-align: left;
+        color: var(--muted);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        font-weight: 600;
+      }
+      td,
+      th {
+        padding: 14px 10px;
+        border-bottom: 1px solid var(--line);
+      }
+      th:first-child,
+      td:first-child {
+        padding-left: 0;
+      }
+      td:not(:first-child) {
+        font-variant-numeric: tabular-nums;
+      }
+      .visual {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        margin: 30px 0 32px;
+        padding: 25px 26px 20px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .fig-label {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 1.4px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 27px;
+      }
+      .fig-label > span {
+        font-size: 8px;
+        background: #ecefe4;
+        color: var(--green);
+        padding: 4px 7px;
+        border-radius: 3px;
+        white-space: nowrap;
+      }
+      figcaption {
+        font-size: 10px;
+        line-height: 1.7;
+        color: var(--muted);
+        margin-top: 20px;
+      }
+      .equation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 0 0 25px;
+      }
+      .equation output {
+        font-family: Instrument, Georgia, serif;
+        font-size: 43px;
+        line-height: 1.2;
+        letter-spacing: -1px;
+        font-variant-numeric: lining-nums tabular-nums;
+      }
+      .equation small {
+        display: block;
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 5px;
+      }
+      .equation b {
+        font-weight: 400;
+        font-size: 20px;
+        color: #a8ad9e;
+      }
+      .accent {
+        color: var(--orange);
+      }
+      .slider-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 10px;
+      }
+      input[type='range'] {
+        width: 100%;
+        accent-color: var(--orange);
+        margin: 13px 0 20px;
+        cursor: pointer;
+      }
+      .once {
+        background: #edf1e5;
+        padding: 13px 15px;
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        font-size: 10px;
+        color: var(--green);
+        align-items: center;
+      }
+      .once strong {
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      .flow {
+        display: flex;
+        align-items: stretch;
+        gap: 10px;
+      }
+      .flow > div {
+        flex: 1;
+        min-width: 0;
+        background: #f0f2e9;
+        padding: 14px 10px;
+      }
+      .flow .bad {
+        background: #f8e9df;
+      }
+      .flow small {
+        font-size: 9px;
+        color: var(--muted);
+      }
+      .flow strong {
+        display: block;
+        font-size: 11px;
+        margin: 6px 0;
+      }
+      .flow span {
+        font-size: 9px;
+        color: var(--muted);
+        display: block;
+      }
+      .flow i {
+        align-self: center;
+        font-style: normal;
+        color: var(--muted);
+      }
+      .result-line {
+        border-top: 1px solid var(--line);
+        margin-top: 23px;
+        padding-top: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        font-size: 10px;
+      }
+      .result-line > span {
+        color: var(--muted);
+      }
+      .result-line strong {
+        color: var(--green);
+        text-align: right;
+        font-size: 11px;
+      }
+      .result-line s {
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .bar-row {
+        display: grid;
+        grid-template-columns: 43px 1fr 55px;
+        align-items: center;
+        gap: 13px;
+        margin: 17px 0;
+        font-size: 10px;
+      }
+      .bar-row strong {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .bar-track {
+        background: #f0f0e8;
+        height: 20px;
+      }
+      .bar {
+        height: 100%;
+        min-width: 4px;
+      }
+      .bar.before {
+        background: #dba18a;
+      }
+      .bar.after {
+        background: var(--green);
+      }
+      .states {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
+      .states > div {
+        border-right: 1px solid var(--line);
+      }
+      .states > div:last-child {
+        border: 0;
+      }
+      .state-dot {
+        width: 12px;
+        height: 12px;
+        display: block;
+        margin-bottom: 18px;
+        border-radius: 50%;
+      }
+      .live {
+        background: var(--orange);
+      }
+      .frozen {
+        background: #91a9b6;
+      }
+      .released {
+        border: 1px dashed var(--green);
+      }
+      .states h3 {
+        font-family: Instrument, Georgia, serif;
+        font-size: 26px;
+        font-weight: 400;
+        margin: 0 0 8px;
+      }
+      .states p {
+        font-size: 10px;
+        color: var(--muted);
+        margin: 0;
+        line-height: 1.7;
+      }
+      .memory {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding: 0 0 12px;
+        text-align: center;
+      }
+      .memory strong {
+        display: block;
+        font-family: Instrument, Georgia, serif;
+        font-size: 36px;
+        font-weight: 400;
+        margin-top: 14px;
+      }
+      .memory span {
+        display: block;
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .queue-icon {
+        width: 46px;
+        height: 55px;
+        background: #e4ebd9;
+        border: 1px solid #c3d0b3;
+        display: grid;
+        place-items: center;
+        margin: auto;
+        color: var(--green);
+        font-size: 33px;
+      }
+      .copy-arrow {
+        font-size: 9px;
+        color: var(--muted);
+      }
+      .copy-arrow b {
+        display: block;
+        font-size: 20px;
+        letter-spacing: 5px;
+        margin-top: 8px;
+        color: #b6baa9;
+      }
+      .paper-stack {
+        position: relative;
+        width: 60px;
+        height: 55px;
+        margin: auto;
+      }
+      .paper-stack i {
+        position: absolute;
+        width: 40px;
+        height: 48px;
+        top: 0;
+        left: 0;
+        border: 1px solid #d7aa92;
+        background: #f5ddcd;
+        transform: rotate(-10deg);
+      }
+      .paper-stack i:nth-child(2) {
+        left: 7px;
+        top: 2px;
+        transform: rotate(0);
+      }
+      .paper-stack i:nth-child(3) {
+        left: 14px;
+        top: 4px;
+        transform: rotate(8deg);
+      }
+      .paper-stack i:nth-child(4) {
+        left: 21px;
+        top: 6px;
+        transform: rotate(15deg);
+      }
+      .import-map {
+        display: flex;
+        align-items: center;
+        gap: 25px;
+        margin-bottom: 17px;
+      }
+      .import-node {
+        padding: 12px 16px;
+        border: 1px solid #c7ccbd;
+        white-space: nowrap;
+        font-size: 11px;
+      }
+      .import-path {
+        border-left: 2px solid #d99b7e;
+        padding-left: 16px;
+        position: relative;
+      }
+      .import-path:before {
+        content: '';
+        position: absolute;
+        width: 25px;
+        left: -27px;
+        top: 50%;
+        height: 1px;
+        background: #c7ccbd;
+      }
+      .import-path span {
+        font-size: 11px;
+        display: block;
+      }
+      .import-path b {
+        font-size: 9px;
+        font-weight: 400;
+        color: var(--orange);
+      }
+      .clean .import-path {
+        border-color: var(--green);
+      }
+      .clean .import-path b {
+        color: var(--green);
+      }
+      .bonus {
+        border-top: 2px solid var(--green);
+      }
+      .dx-visual {
+        background: #eff2e8;
+        border-color: #d7ddc9;
+      }
+      .dx-metric {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 26px;
+      }
+      .dx-metric > strong {
+        font-family: Instrument, Georgia, serif;
+        font-size: 86px;
+        line-height: 1;
+        font-weight: 400;
+        color: var(--green);
+        letter-spacing: -4px;
+      }
+      .dx-metric > strong span {
+        font-size: 54px;
+      }
+      .dx-metric > div {
+        font-size: 14px;
+      }
+      .dx-metric small {
+        display: block;
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      footer {
+        max-width: 1108px;
+        margin: 0 auto;
+        border-top: 1px solid var(--ink);
+        padding: 24px 0 50px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      footer a {
+        text-decoration: none;
+      }
+      .mobile-contents {
+        display: none;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible,
+      summary:focus-visible {
+        outline: 2px solid var(--orange);
+        outline-offset: 5px;
+      }
+      @media (min-width: 1500px) {
+        .hero {
+          padding-top: 100px;
+        }
+        .layout {
+          column-gap: 90px;
+        }
+      }
+      @media (max-width: 1000px) {
+        .layout {
+          grid-template-columns: 160px minmax(0, 1fr);
+          gap: 35px;
+        }
+        .contents a {
+          font-size: 10px;
+        }
+        .equation output {
+          font-size: 35px;
+        }
+        .hero {
+          padding-top: 55px;
+        }
+        footer {
+          margin: 0 36px;
+        }
+      }
+      @media (max-width: 760px) {
+        header {
+          height: 65px;
+          padding: 0 23px;
+        }
+        .brand {
+          font-size: 22px;
+        }
+        .brand span {
+          display: none;
+        }
+        .top-actions {
+          gap: 12px;
+        }
+        .top-actions > a {
+          display: none;
+        }
+        .print {
+          font-size: 11px;
+        }
+        .hero {
+          padding: 43px 23px 29px;
+        }
+        h1 {
+          font-size: 65px;
+          letter-spacing: -1.6px;
+          line-height: 1.01;
+          margin: 24px 0;
+        }
+        .dek {
+          font-size: 16px;
+          line-height: 1.6;
+        }
+        .hero-rule {
+          margin-top: 29px;
+          font-size: 8px;
+          letter-spacing: 0.7px;
+        }
+        .eyebrow {
+          font-size: 9px;
+          letter-spacing: 1.5px;
+        }
+        .layout {
+          display: block;
+          padding: 0 23px 65px;
+        }
+        .contents {
+          display: none;
+        }
+        .mobile-contents {
+          display: block;
+          margin: 0 0 30px;
+          border-bottom: 1px solid var(--line);
+          padding: 0 0 16px;
+          font-size: 11px;
+        }
+        .mobile-contents summary {
+          cursor: pointer;
+          color: var(--muted);
+        }
+        .mobile-contents nav {
+          display: grid;
+          gap: 11px;
+          padding-top: 20px;
+        }
+        .mobile-contents a {
+          text-decoration: none;
+        }
+        .mobile-contents a span {
+          display: inline-block;
+          width: 30px;
+          color: var(--orange);
+        }
+        article {
+          font-size: 15px;
+          line-height: 1.85;
+        }
+        article > p:first-child {
+          font-size: 22px;
+        }
+        h2 {
+          font-size: 36px;
+          margin-bottom: 22px;
+        }
+        .essay-section {
+          margin-top: 46px;
+          padding-top: 28px;
+        }
+        .visual {
+          padding: 20px 16px 17px;
+          margin: 25px -5px;
+          border-radius: 3px;
+        }
+        .fig-label {
+          font-size: 8px;
+          letter-spacing: 0.7px;
+          margin-bottom: 22px;
+        }
+        .fig-label > span {
+          font-size: 7px;
+        }
+        .equation {
+          gap: 7px;
+        }
+        .equation output {
+          font-size: 32px;
+          letter-spacing: -0.7px;
+        }
+        .equation small {
+          font-size: 8px;
+          max-width: 88px;
+        }
+        .equation b {
+          font-size: 14px;
+        }
+        .once {
+          display: block;
+          font-size: 9px;
+          padding: 12px;
+        }
+        .once strong {
+          display: block;
+          margin-top: 5px;
+        }
+        .flow {
+          gap: 5px;
+        }
+        .flow > div {
+          padding: 9px 7px;
+        }
+        .flow small {
+          font-size: 8px;
+        }
+        .flow strong {
+          font-size: 10px;
+        }
+        .flow span {
+          font-size: 8px;
+        }
+        .flow i {
+          font-size: 11px;
+        }
+        .result-line {
+          align-items: start;
+          font-size: 9px;
+          gap: 14px;
+        }
+        .result-line strong {
+          font-size: 10px;
+        }
+        .states {
+          gap: 12px;
+        }
+        .states h3 {
+          font-size: 23px;
+        }
+        .states p {
+          font-size: 9px;
+        }
+        .memory strong {
+          font-size: 31px;
+        }
+        .memory span {
+          font-size: 9px;
+        }
+        .copy-arrow {
+          font-size: 8px;
+          max-width: 70px;
+        }
+        .import-node {
+          padding: 10px;
+          font-size: 10px;
+        }
+        .import-map {
+          gap: 20px;
+        }
+        .import-path {
+          padding-left: 10px;
+        }
+        .import-path:before {
+          width: 20px;
+          left: -22px;
+        }
+        .import-path span {
+          font-size: 10px;
+        }
+        .import-path b {
+          font-size: 8px;
+        }
+        table {
+          font-size: 10px;
+        }
+        th {
+          font-size: 8px;
+        }
+        td,
+        th {
+          padding: 12px 7px;
+        }
+        footer {
+          margin: 0 23px;
+          padding-bottom: 30px;
+          font-size: 10px;
+          gap: 20px;
+        }
+        .dx-metric > strong {
+          font-size: 76px;
+        }
+        .byline .readtime {
+          font-size: 10px;
+        }
+        .bar-row {
+          grid-template-columns: 38px 1fr 48px;
+          gap: 9px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        * {
+          transition: none !important;
+        }
+      }
+      @media print {
+        body {
+          background: white;
+        }
+        header,
+        .contents,
+        .mobile-contents,
+        .reading-progress,
+        .print {
+          display: none;
+        }
+        .hero {
+          padding-top: 20px;
+        }
+        .hero h1 {
+          font-size: 68px;
+        }
+        .layout {
+          display: block;
+          max-width: 800px;
+        }
+        .visual {
+          break-inside: avoid;
+        }
+        h2 {
+          break-after: avoid;
+        }
+        footer {
+          display: none;
+        }
+        .essay-section {
+          margin-top: 30px;
+        }
+        .hero-rule {
+          margin-top: 20px;
+        }
+        input[type='range'] {
+          display: none;
+        }
+      }
+      .route-example {
+        padding: 16px;
+        background: #f6eee6;
+        margin: 0 0 14px;
+      }
+      .route-example > small {
+        font-size: 9px;
+        color: var(--muted);
+      }
+      .route-chips {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 7px;
+        margin-top: 12px;
+      }
+      .route-chips > span {
+        background: #e4ebd9;
+        border: 1px solid #bdcbb1;
+        padding: 7px 10px;
+        font-size: 10px;
+      }
+      .route-chips .retained {
+        background: #f4ddce;
+        border: 1px dashed #ce9f81;
+      }
+      .route-chips > i {
+        font-size: 10px;
+        font-style: normal;
+        color: var(--green);
+      }
+      .route-example p {
+        font-size: 10px;
+        color: var(--muted);
+        margin: 12px 0 0;
+      }
+      .route-example.cleaned {
+        background: #edf1e5;
+      }
+      .repeat-note {
+        font-size: 10px;
+        color: var(--orange);
+        padding: 14px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .queue-work {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-top: 20px;
+      }
+      .queue-work strong {
+        display: block;
+        font-size: 10px;
+        color: var(--green);
+      }
+      .queue-work small {
+        display: block;
+        font-size: 9px;
+        color: var(--muted);
+        line-height: 1.6;
+        margin-top: 6px;
+      }
+      @media (max-width: 760px) {
+        h1 {
+          font-size: 57px;
+        }
+        .route-chips > span {
+          font-size: 9px;
+          padding: 7px;
+        }
+        .queue-work {
+          gap: 10px;
+        }
+        .queue-work strong {
+          font-size: 9px;
+        }
+        .queue-work small {
+          font-size: 8px;
+        }
+      }
+    </style>
+
+    <style id="handoff-blog-polish">
+      :root {
+        --bg: #ffffff;
+        --ink: #181d27;
+        --muted: #68716d;
+        --line: #e2e7e4;
+        --orange: #335645;
+        --green: #335645;
+        --paper: #f9fbf9;
+      }
+      header {
+        background: #113120;
+        color: #fff;
+        border-bottom-color: #113120;
+      }
+      .brand span,
+      .print {
+        color: #c9d9cf;
+      }
+      .draft-pill {
+        border-color: #456452;
+        color: #e3ede7;
+      }
+      .reading-progress {
+        background: #80c99c;
+      }
+      .dek {
+        color: #535b58;
+      }
+      .hero {
+        padding-top: 64px;
+      }
+      .avatar {
+        background: #d8e8df;
+      }
+      .hero-rule {
+        border-top-color: #ccd8d0;
+      }
+      h2 {
+        font-family: DM, system-ui, sans-serif;
+        font-size: 31px;
+        font-weight: 550;
+        line-height: 1.3;
+        letter-spacing: -0.8px;
+      }
+      article {
+        line-height: 1.8;
+      }
+      p {
+        margin-bottom: 20px;
+      }
+      .essay-section {
+        margin-top: 52px;
+        padding-top: 30px;
+      }
+      .visual {
+        border-radius: 8px;
+      }
+      .fig-label > span,
+      .once,
+      .flow > div {
+        background: #eaf2ed;
+      }
+      .flow .bad {
+        background: #f4ebe5;
+      }
+      code {
+        background: #edf2ee;
+      }
+      .bar-track {
+        background: #e8ede9;
+      }
+      .dx-visual {
+        background: #eff6f1;
+        border-color: #d7e5dc;
+      }
+      .route-example.cleaned {
+        background: #edf5ef;
+      }
+      .route-chips > span {
+        background: #dcecdf;
+        border-color: #bfd5c5;
+      }
+      .route-chips .retained {
+        background: #f4e9e1;
+        border-color: #c9ae99;
+      }
+      th {
+        color: #53675b;
+      }
+      footer {
+        border-top-color: #ccd8d0;
+      }
+      @media (max-width: 760px) {
+        .hero {
+          padding-top: 40px;
+        }
+        h2 {
+          font-size: 27px;
+          letter-spacing: -0.6px;
+        }
+        .essay-section {
+          margin-top: 40px;
+          padding-top: 25px;
+        }
+        .visual {
+          border-radius: 6px;
+        }
+      }
+      @media print {
+        .hero {
+          padding-top: 20px;
+        }
+      }
+    </style>
+    <style id="cache-waterfall-styles">
+      .cache-cascade {
+        padding: 25px 26px 18px;
+      }
+      .cascade-trigger {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #f7ece5;
+        border: 1px solid #ebd4c5;
+        border-radius: 6px;
+        padding: 15px;
+      }
+      .cascade-warning {
+        display: grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+        border: 1px solid #be8566;
+        color: #97522d;
+        border-radius: 50%;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .cascade-trigger strong {
+        font-size: 12px;
+        font-weight: 600;
+        color: #744c36;
+        display: block;
+      }
+      .cascade-trigger small {
+        font-size: 10px;
+        color: #917460;
+        display: block;
+        margin-top: 4px;
+      }
+      .cascade-down {
+        margin-left: auto;
+        color: #b9805d;
+        font-size: 23px;
+      }
+      .waterfall-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--muted);
+        margin: 24px 0 13px;
+      }
+      .waterfall-row {
+        display: grid;
+        grid-template-columns: 106px minmax(0, 1fr);
+        align-items: center;
+        min-height: 36px;
+        gap: 14px;
+      }
+      .waterfall-row > span {
+        font-size: 10px;
+        color: #57625c;
+      }
+      .waterfall-track {
+        height: 36px;
+        position: relative;
+        border-left: 1px solid #e3e8e3;
+        background: repeating-linear-gradient(
+          to right,
+          transparent 0,
+          transparent calc(25% - 1px),
+          #e7ebe6 calc(25% - 1px),
+          #e7ebe6 25%
+        );
+      }
+      .waterfall-track b {
+        position: absolute;
+        left: var(--start);
+        top: 5px;
+        width: var(--length);
+        height: 25px;
+        border: 1px solid #d4a68b;
+        border-left: 3px solid #b67850;
+        border-radius: 3px;
+        background: #efd5c3;
+        display: flex;
+        align-items: center;
+        padding-left: 9px;
+        font-size: 9px;
+        font-weight: 500;
+        color: #7d5035;
+      }
+      .cache-resolved {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #eaf3ed;
+        border: 1px solid #d6e5db;
+        border-radius: 6px;
+        padding: 15px;
+        margin-top: 21px;
+      }
+      .cache-check {
+        display: grid;
+        place-items: center;
+        height: 24px;
+        width: 24px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: #d3e6d9;
+        color: #335645;
+        font-size: 12px;
+      }
+      .cache-resolved strong {
+        display: block;
+        font-size: 11px;
+        color: #335645;
+        font-weight: 600;
+      }
+      .cache-resolved small {
+        display: block;
+        font-size: 10px;
+        color: #66796d;
+        margin-top: 4px;
+      }
+      .cache-cascade figcaption {
+        margin-top: 13px;
+        font-size: 9px;
+      }
+      @media (max-width: 760px) {
+        .cache-cascade {
+          padding: 20px 16px 16px;
+        }
+        .cascade-trigger {
+          padding: 12px 10px;
+          gap: 9px;
+        }
+        .cascade-trigger strong {
+          font-size: 10px;
+        }
+        .cascade-trigger small {
+          font-size: 9px;
+        }
+        .cascade-down {
+          font-size: 18px;
+        }
+        .waterfall-row {
+          grid-template-columns: 79px minmax(0, 1fr);
+          gap: 9px;
+          min-height: 34px;
+        }
+        .waterfall-row > span {
+          font-size: 9px;
+        }
+        .waterfall-track {
+          height: 34px;
+        }
+        .waterfall-track b {
+          font-size: 8px;
+          padding-left: 5px;
+          height: 23px;
+        }
+        .waterfall-label {
+          font-size: 7px;
+          letter-spacing: 0.1px;
+        }
+        .cache-resolved {
+          padding: 12px 10px;
+          gap: 9px;
+        }
+        .cache-resolved strong {
+          font-size: 10px;
+        }
+        .cache-resolved small {
+          font-size: 9px;
+        }
+      }
+    </style>
+
+    <style id="cms-image-styles">
+      .cms-visual {
+        margin: 28px 0;
+        break-inside: avoid;
+      }
+      .cms-visual img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+      }
+      .cms-visual figcaption {
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--muted);
+        margin-top: 9px;
+      }
+      .cms-visual figcaption:empty {
+        display: none;
+      }
+    </style>
+  </head>
+  <body id="top">
+    <div class="reading-progress" aria-hidden="true"></div>
+    <header>
+      <a class="brand" href="#top">handoff<span>Engineering</span></a>
+      <div class="top-actions">
+        <a href="#contents">In this story ↗</a
+        ><span class="draft-pill">Author’s draft</span
+        ><button
+          class="print"
+          type="button"
+          aria-label="Print or save article as PDF"
+        >
+          Print ↗
+        </button>
+      </div>
+    </header>
+    <main>
+      <div class="hero">
+        <div class="eyebrow">Performance / Lessons from production</div>
+        <h1>Small changes.<br /><em>Big performance wins.</em></h1>
+        <p class="dek">
+          Six focused fixes that made a big difference at Handoff.<br />And the
+          investigations that led us to them.
+        </p>
+        <div class="byline">
+          <span class="avatar" aria-hidden="true">FK</span>
+          <div><strong>Krein</strong><small>Engineering at Handoff</small></div>
+          <span class="readtime">5 min read · + a TypeScript DX bonus</span>
+        </div>
+        <div class="hero-rule">
+          <span>Backend → Cache → UI → Memory → Bundles</span
+          ><span>Field notes / 01</span>
+        </div>
+      </div>
+      <div class="layout">
+        <aside class="contents" id="contents" aria-label="Table of contents">
+          <div class="contents-title">In this story</div>
+          <nav>
+            <a href="#calculations"><span>01</span>Count the calculations</a
+            ><a href="#cache"><span>02</span>Give data an identity</a
+            ><a href="#navigation"><span>03</span>Native navigation on web</a
+            ><a href="#sheets"><span>04</span>Render less, less often</a
+            ><a href="#persistence"><span>05</span>The PostHog queue</a
+            ><a href="#bundles"><span>06</span>Follow the import graph</a
+            ><a href="#dx"><span>+</span>Bonus · TypeScript DX</a
+            ><a href="#closing"><span>·</span>The small wins add up</a>
+          </nav>
+          <p class="bottom-note">
+            Six investigations.<br />One recurring question:<br />where is the
+            multiplier?
+          </p>
+        </aside>
+        <div>
+          <details class="mobile-contents">
+            <summary>Explore the six lessons + DX bonus</summary>
+            <nav aria-label="Mobile table of contents">
+              <a href="#calculations"><span>01</span>Count the calculations</a
+              ><a href="#cache"><span>02</span>Give data an identity</a
+              ><a href="#navigation"><span>03</span>Native navigation on web</a
+              ><a href="#sheets"><span>04</span>Render less, less often</a
+              ><a href="#persistence"><span>05</span>The PostHog queue</a
+              ><a href="#bundles"><span>06</span>Follow the import graph</a
+              ><a href="#dx"><span>+</span>Bonus · TypeScript DX</a
+              ><a href="#closing"><span>·</span>The small wins add up</a>
+            </nav>
+          </details>
+          <article aria-label="Performance lessons from Handoff">
+            <p>
+              Adding an ID. Resetting a navigation stack. Moving a calculation
+              up one level. Isolating a tiny import.
+            </p>
+            <p>
+              Some of our biggest performance wins at Handoff came from changes
+              like these. Obvious in hindsight. Harder to spot when each piece
+              of code looks reasonable on its own.
+            </p>
+            <p>
+              Here are six memorable ones from the last year and a half across
+              our backend and our web and React Native app. Plus a TypeScript DX
+              bonus.
+            </p>
+            <section class="essay-section">
+              <h2 id="calculations">
+                Count the calculations, not just the queries
+              </h2>
+              <p>
+                A 400-row estimate could cause roughly
+                <strong>800,000 row iterations</strong>. Several GraphQL fields
+                recalculated the whole estimate&#x27;s breakdown for each row:
+                about 2,000 calculations, each walking 400 rows.
+              </p>
+              <figure class="cms-visual">
+                <img
+                  src="images/01-quadratic-work.png"
+                  alt="A compact green stack of estimate rows unrolls into a huge terracotta looping ribbon, showing repeated passes amplifying work."
+                  width="1536"
+                  height="1024"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+              <p>
+                On small projects with 30–60 rows, this wasn&#x27;t obvious.
+                Full-house estimates with 300–400 rows exposed it: repeated
+                calculations hammered the server&#x27;s JS thread and slowed
+                unrelated requests. That&#x27;s the danger of quadratic work.
+                Ten times the rows can mean a hundred times the work.
+              </p>
+              <p>
+                We moved the calculation to <code>Estimate.rows</code>, batched
+                the supporting data, and let field resolvers return precomputed
+                values. The repeated traversal became one shared pass. Totals,
+                rounding, and zero values still had to hold up.
+              </p>
+              <p>
+                Count calculations as well as database calls. Caching a query
+                doesn&#x27;t stop you from processing its result thousands of
+                times. Neither does making the function async.
+              </p>
+            </section>
+            <section class="essay-section">
+              <h2 id="cache">One missing ID, a waterfall of requests</h2>
+              <p>
+                We already had the data. But some GraphQL responses were missing
+                an entity&#x27;s <code>id</code>, so Apollo couldn&#x27;t
+                reliably connect them to what it had cached.
+              </p>
+              <figure class="cms-visual">
+                <img
+                  src="images/02-cache-waterfall.png"
+                  alt="Tactile 3D cache block with a missing identity tile beside a cascade of repeated terracotta blocks; an ID tile locks into a calm green reusable block."
+                  width="1536"
+                  height="1024"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+              <p>
+                Auth, navigation, permissions, and billing would fetch again.
+                One missing ID caused a cascade of work that shouldn&#x27;t have
+                happened.
+              </p>
+              <p>
+                We added IDs to queries and manual cache writes, alongside query
+                and fetch-policy fixes. Fewer unnecessary requests, less
+                repeated work, and less pressure on the server. The difference
+                was especially noticeable on Android.
+              </p>
+              <p>
+                Check the lint rules for your tools. GraphQL ESLint&#x27;s
+                <a
+                  href="https://the-guild.dev/graphql/eslint/rules/require-selections"
+                  >require-selections</a
+                >
+                catches missing <code>id</code> selections when the type has
+                one. We enabled it. A simple lint error would have saved a lot
+                of this headache.
+              </p>
+            </section>
+            <section class="essay-section">
+              <h2 id="navigation">
+                Native stacking didn&#x27;t translate well to web
+              </h2>
+              <p>
+                During longer web sessions, everything started to crawl. On
+                mobile, stacking screens works naturally: you open a screen,
+                then go back, popping it off the stack.
+              </p>
+              <figure class="cms-visual">
+                <img
+                  src="images/03-reset-the-stack.png"
+                  alt="Sculptural stack of retained screens and observer beads resolves into one clean root slab."
+                  width="1536"
+                  height="1024"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+              <p>
+                Our web app used the same React Navigation stack, but people
+                moved between pages through the sidebar. Those links used
+                <code>router.push()</code>. Even going home added a page instead
+                of clearing the old stack. Screens and their observers kept
+                accumulating. Freezing reduced rendering, but didn&#x27;t
+                release those subscriptions.
+              </p>
+              <p>
+                We had to clear the stack explicitly when a main root page
+                became visible. Removing those trees released their observers.
+                One local comparison dropped from
+                <strong>3,671 active queries to 298</strong>, with the same
+                <strong>105 cache objects</strong>. We also removed unnecessary
+                tracking subscriptions.
+              </p>
+              <p>
+                The native pattern was useful, but our web navigation needed
+                different cleanup.
+              </p>
+            </section>
+            <section class="essay-section">
+              <h2 id="sheets">Render less, less often</h2>
+              <p>
+                A lot of React performance comes down to this: render less, less
+                often. Only do the work the current interaction needs.
+              </p>
+              <figure class="cms-visual">
+                <img
+                  src="images/04-render-less.png"
+                  alt="Tactile green chambers contrast a closed chamber wasting energy on repeated internal work with a calm chamber preserving an identical arrangement."
+                  width="1536"
+                  height="1024"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+              <p>
+                Our closed dialogs and bottom sheets kept their forms mounted,
+                which preserved state. But their trees and providers could still
+                rerender while nobody was using them. Freezing those inactive
+                trees was a straightforward win: keep the state, skip
+                unnecessary rendering, and resume before opening.
+              </p>
+              <p>
+                The boundary matters. A follow-up dialog needs to live outside
+                its frozen parent, and video needs explicit teardown because
+                freezing React doesn&#x27;t stop playback.
+              </p>
+              <p>
+                The UI already worked. This made it cheaper to keep around.
+                That&#x27;s often the game with React performance: give it less
+                to do.
+              </p>
+            </section>
+            <section class="essay-section">
+              <h2 id="persistence">A small PostHog queue, a lot of JS work</h2>
+              <p>
+                PostHog&#x27;s React Native storage was keeping
+                <strong>200 events, about 1.86 MB</strong>. Small enough. But
+                adding one event could turn the whole cache into JSON again and
+                write it to storage.
+              </p>
+              <figure class="cms-visual">
+                <img
+                  src="images/05-small-queue-many-copies.png"
+                  alt="A tiny bead joins a green queue slab, producing a broad fan of terracotta slabs containing identical rows of beads."
+                  width="1536"
+                  height="1024"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+              <p>
+                One new event, another copy of everything. During bursts, those
+                copies piled up faster than writes finished. Profiling found
+                <strong>284 large strings accounting for roughly 1.06 GB</strong
+                >.
+              </p>
+              <p>
+                We removed duplicate feature-flag events, cut the queue to 30,
+                and kept only the latest copy waiting to be written. That
+                didn&#x27;t eliminate every JSON conversion, but it reduced the
+                data being processed and the copies kept alive. The smaller
+                queue also means losing older analytics events sooner when
+                offline.
+              </p>
+              <p>
+                Follow what happens after an append. A small queue can still
+                create a lot of work if every change rewrites the whole thing.
+              </p>
+            </section>
+            <section class="essay-section">
+              <h2 id="bundles">The dark side of DOM components</h2>
+              <p>
+                A single import can bring a whole chain of app code into a DOM
+                bundle. Our editor needed a tiny underline helper. Importing it
+                from a shared module pulled in GraphQL, telemetry, and their
+                dependencies too.
+              </p>
+              <figure class="cms-visual">
+                <img
+                  src="images/06-follow-the-import.png"
+                  alt="Tactile ceramic underline hooks contrast a dense dependency mass with a single self-contained green form."
+                  width="1536"
+                  height="1024"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+              <p>
+                Don&#x27;t assume the bundler will strip everything you
+                aren&#x27;t using. Expo Atlas showed what actually got included.
+                We isolated the helper and removed unnecessary
+                <code>use dom</code> directives. Together, those changes reduced
+                reported DOM bundle output from
+                <strong>27.6 MB to 1.7 MB</strong>.
+              </p>
+              <p>
+                Keep these imports small and self-contained. Sometimes
+                duplicating a few lines is better than dragging a much larger
+                bundle along with them.
+              </p>
+            </section>
+            <section class="essay-section bonus">
+              <h2 id="dx">Bonus: a few type changes, a much faster check</h2>
+              <p>
+                We had already moved to Go-based TypeScript, and a cold check
+                still took <strong>79 seconds</strong>. Microsoft&#x27;s
+                <a
+                  href="https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/"
+                  >TypeScript 7 benchmarks</a
+                >
+                had VS Code building in about 10 seconds. If VS Code could do
+                that, why was our Node server taking over a minute just to check
+                types? That was worth digging into.
+              </p>
+              <figure class="cms-visual">
+                <img
+                  src="images/07-less-type-work.png"
+                  alt="Two identical green marbles travel a sprawling coiled track and a short direct track, arriving at identical output molds."
+                  width="1536"
+                  height="1024"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <figcaption>
+                  Cold checks on the same setup, single-threaded TypeScript
+                  7.0.2.
+                </figcaption>
+              </figure>
+              <p>
+                Our Prisma types described configurations we didn&#x27;t use.
+                Narrowing them in just a few files brought that same check down
+                to <strong>13 seconds</strong>, with
+                <strong>53 million fewer type instantiations</strong> and
+                identical JavaScript. Cached runs with no code changes now take
+                about <strong>2 seconds</strong>.
+              </p>
+              <p>
+                That&#x27;s a big win for AI coding too. Less waiting between
+                editing and checking means a much better feedback loop. Check
+                <code>--extendedDiagnostics</code> before accepting slow checks
+                as normal. Even a faster compiler benefits from less work.
+              </p>
+            </section>
+            <section class="essay-section">
+              <h2 id="closing">The small wins add up</h2>
+              <p>
+                These are some of the most memorable ones. But performance is
+                often death by a hundred paper cuts: another observer, another
+                hidden render, another copy of the same data. Each looks
+                harmless until they add up.
+              </p>
+              <p>
+                We chip away at it whenever we can. There are hundreds of
+                smaller fixes across the team: one less render, a tighter query,
+                less work on the JS thread. That steady work shapes how the
+                product feels every day.
+              </p>
+              <p>
+                Not all fast software is good, but all good software is fast.
+                People should be able to get their work done without waiting on
+                ours.
+              </p>
+              <p>That&#x27;s the standard we strive for at Handoff.</p>
+            </section>
+          </article>
+        </div>
+      </div>
+    </main>
+    <footer>
+      <span>Handoff Engineering · Author’s draft</span
+      ><a href="#top">Back to the top ↑</a>
+    </footer>
+    <script>
+      document
+        .querySelector('.print')
+        .addEventListener('click', () => window.print());
+      const bar = document.querySelector('.reading-progress');
+      const headings = [...document.querySelectorAll('article h2')];
+      const update = () => {
+        const max = document.documentElement.scrollHeight - innerHeight;
+        bar.style.width = (max > 0 ? (scrollY / max) * 100 : 0) + '%';
+        let current = '';
+        for (const h of headings) {
+          if (h.getBoundingClientRect().top < 200) current = h.id;
+        }
+        document.querySelectorAll('.contents a').forEach((a) => {
+          const active = a.hash === '#' + current;
+          a.classList.toggle('active', active);
+          if (active) a.setAttribute('aria-current', 'location');
+          else a.removeAttribute('aria-current');
+        });
+      };
+      addEventListener('scroll', update, { passive: true });
+      update();
+      document
+        .querySelectorAll('.mobile-contents a')
+        .forEach((a) =>
+          a.addEventListener(
+            'click',
+            () => (document.querySelector('.mobile-contents').open = false),
+          ),
+        );
+    </script>
+  </body>
+</html>

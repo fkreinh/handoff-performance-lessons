@@ -1,0 +1,10 @@
+{
+  "name": "handoff-performance-lessons",
+  "account_id": "055dc37aa5b65190125a66e918e9b73e",
+  "compatibility_date": "2026-09-13",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./public"
+  }
+}
