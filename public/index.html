@@ -1740,7 +1740,7 @@
                 as normal. Even a faster compiler benefits from less work.
               </p>
             <!-- deep-dive:all:start -->
-<details class="deep-dive" id="under-the-hood"><summary>The code changes themselves were small. Here are a few examples, if you’re curious.</summary><div class="deep-body"><div class="deep-note"><h3 id="calculations-implementation">Count the calculations</h3><figure class="deep-code"><figcaption><span>Simplified parent and row resolvers</span><button type="button" class="deep-copy" aria-label="Copy code: Simplified parent and row resolvers. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Simplified parent and row resolvers"><code>async function resolveRows(estimate, rows) {
+<details class="deep-dive" id="under-the-hood"><summary>Code examples and implementation notes</summary><div class="deep-body"><div class="deep-note"><h3 id="calculations-implementation">Count the calculations</h3><figure class="deep-code"><figcaption><span>Simplified parent and row resolvers</span><button type="button" class="deep-copy" aria-label="Copy code: Simplified parent and row resolvers. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Simplified parent and row resolvers"><code>async function resolveRows(estimate, rows) {
   const totals = await calculateEstimate(estimate.id);
   return rows.map((row) =&gt; ({
     ...row,

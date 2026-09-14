@@ -88,7 +88,7 @@ That's a big win for AI coding too. Less waiting between editing and checking me
 
 <!-- deep-dive:all:start -->
 <details>
-<summary>The code changes themselves were small. Here are a few examples, if you’re curious.</summary>
+<summary>Code examples and implementation notes</summary>
 
 ### Count the calculations
 

@@ -2,7 +2,7 @@
   {
     "_type": "engineeringDeepDive",
     "_key": "under-the-hood",
-    "title": "The code changes themselves were small. Here are a few examples, if you’re curious.",
+    "title": "Code examples and implementation notes",
     "body": [
       {
         "_type": "block",

@@ -11,7 +11,7 @@ function blockHtml(block, index) {
   const code = block.language === 'diff' ? block.code.split('\n').map((line) => `<span class="${line.startsWith('+') ? 'dd-add' : line.startsWith('-') ? 'dd-remove' : 'dd-context'}">${escape(line)}</span>`).join('\n') : escape(block.code);
   return `<figure class="deep-code"><figcaption><span>${escape(block.label)}</span><button type="button" class="deep-copy" aria-label="Copy code: ${escape(block.label)}. Example ${index + 1}.">Copy</button></figcaption><pre tabindex="0" aria-label="${escape(block.label)}"><code>${code}</code></pre></figure>`;
 }
-const noteLabel = 'The code changes themselves were small. Here are a few examples, if you’re curious.';
+const noteLabel = 'Code examples and implementation notes';
 const noteHtml = entries.map((entry) => `<div class="deep-note"><h3 id="${entry.section}-implementation">${escape(entry.title)}</h3>${entry.blocks.map(blockHtml).join('\n')}</div>`).join('\n');
 const accordionHtml = `<!-- deep-dive:all:start -->\n<details class="deep-dive" id="under-the-hood"><summary>${escape(noteLabel)}</summary><div class="deep-body">${noteHtml}</div></details>\n<!-- deep-dive:all:end -->\n`;
 let html = await readFile(new URL('public/index.html', root), 'utf8');
