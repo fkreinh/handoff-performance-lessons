@@ -1,0 +1,394 @@
+[
+  {
+    "_type": "engineeringDeepDive",
+    "_key": "calculations-implementation",
+    "title": "Show me the change",
+    "teaser": "Calculate once. Let each row reuse the result.",
+    "body": [
+      {
+        "_type": "engineeringCode",
+        "_key": "b0",
+        "language": "javascript",
+        "label": "Simplified parent and row resolvers",
+        "code": "async function resolveRows(estimate, rows) {\n  const totals = await calculateEstimate(estimate.id);\n  return rows.map((row) => ({\n    ...row,\n    precomputedTotal: totals.get(row.id),\n  }));\n}\n\nfunction resolveTotal(row) {\n  if (row.precomputedTotal != null) {\n    return row.precomputedTotal; // Zero is valid too.\n  }\n  return calculateRowTotal(row); // Existing fallback.\n}"
+      },
+      {
+        "_type": "block",
+        "_key": "b1",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "The important move was carrying the computed values down to the row resolvers. Loading the same rows from a cache was still expensive if every field then recalculated the estimate. Here, the helper names are simplified; ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "totals",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": " represents the results indexed by row ID.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b2",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "Use a null check, not a truthiness check. Zero is a valid result. We kept the fallback for rows arriving through other paths and batched the supporting reads in the parent too. Moving the work only helps if the children actually stop doing it.",
+            "marks": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "_type": "engineeringDeepDive",
+    "_key": "cache-implementation",
+    "title": "Show me the change",
+    "teaser": "Include the identity, even when the UI never displays it.",
+    "body": [
+      {
+        "_type": "engineeringCode",
+        "_key": "b0",
+        "language": "diff",
+        "label": "One of the fragment fixes; unrelated fields omitted",
+        "code": " fragment EstimateFragment on Estimate {\n+  id\n   name\n }"
+      },
+      {
+        "_type": "block",
+        "_key": "b1",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "The UI only needed the name. The cache needed the ID. The same applies to nested entities: an ID on the parent does not identify every object below it.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "engineeringCode",
+        "_key": "b2",
+        "language": "diff",
+        "label": "The same fix in a manual cache write",
+        "code": " data: {\n+  id: messageId,\n   message,\n   role,\n },"
+      },
+      {
+        "_type": "block",
+        "_key": "b3",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "We checked manual writes as well as server responses. Then we enabled the GraphQL operations lint rules so missing ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "id",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": " selections would fail before review. The rule needs your schema, and embedded queries need the GraphQL processor. If your cache uses custom identity fields, require those instead.",
+            "marks": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "_type": "engineeringDeepDive",
+    "_key": "navigation-implementation",
+    "title": "Show me the change",
+    "teaser": "Clear retained detail screens at a deliberate root boundary.",
+    "body": [
+      {
+        "_type": "engineeringCode",
+        "_key": "b0",
+        "language": "typescript",
+        "label": "Reset action from the root-focus hook; guards shown in simplified form",
+        "code": "// Run on root focus, using the main stack's navigation object.\nif (pathname !== rootHref) return;\nif (navigation.getState().routes.length <= 1) return;\n\nnavigation.dispatch(\n  CommonActions.reset({\n    index: 0,\n    routes: [{\n      name: \"(tabs)\",\n      state: {\n        index: 0,\n        routes: [{ name: selectedTab }],\n      },\n    }],\n  }),\n);"
+      },
+      {
+        "_type": "block",
+        "_key": "b1",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "Reaching a root page was our cleanup boundary. We reset the main stack to the selected tab, which removed the old detail trees. Freezing a retained screen could reduce its rendering; removing it released its observers.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b2",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "The real hook also checked that a reset was needed, guarded against re-entry, and canceled scheduled cleanup when focus changed. Keep that boundary explicit: normal detail-to-detail navigation should still stack. The route names here belong to our navigator.",
+            "marks": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "_type": "engineeringDeepDive",
+    "_key": "sheets-implementation",
+    "title": "Show me the change",
+    "teaser": "Put the expensive provider inside the freeze boundary too.",
+    "body": [
+      {
+        "_type": "engineeringCode",
+        "_key": "b0",
+        "language": "diff",
+        "label": "Simplified from the row-panel change; other props omitted",
+        "code": "+<Freeze freeze={!panelOpen}>\n   <RowPanelProvider>\n     <BottomSheet onDismiss={handleDismiss}>\n       <RowForm />\n     </BottomSheet>\n   </RowPanelProvider>\n+</Freeze>"
+      },
+      {
+        "_type": "block",
+        "_key": "b1",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "Freezing just the form leaves its provider outside the boundary, still doing work. We wrapped both. The open-state control stayed outside so it could wake the tree back up.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "engineeringCode",
+        "_key": "b2",
+        "language": "typescript",
+        "label": "Resume before presenting; freeze after dismissal",
+        "code": "function openPanel() {\n  setPanelOpen(true);\n  requestAnimationFrame(() => sheetRef.current?.present());\n}\n\nfunction handleDismiss() {\n  setPanelOpen(false);\n}"
+      },
+      {
+        "_type": "block",
+        "_key": "b3",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "Use the sheet’s dismissal callback, not the start of its closing animation. That keeps the transition live and the mounted form state intact. The target is unnecessary rendering; freezing is not a general pause button for background work.",
+            "marks": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "_type": "engineeringDeepDive",
+    "_key": "persistence-implementation",
+    "title": "Show me the change",
+    "teaser": "Keep the current write and the latest waiting snapshot.",
+    "body": [
+      {
+        "_type": "engineeringCode",
+        "_key": "b0",
+        "language": "diff",
+        "label": "Queue and storage configuration",
+        "code": "-maxQueueSize: 200,\n+maxQueueSize: 30,\n+customStorage: createPostHogStorage(),"
+      },
+      {
+        "_type": "engineeringCode",
+        "_key": "b1",
+        "language": "typescript",
+        "label": "setItem and drainWrites excerpts; reads and retries omitted",
+        "code": "// Every new snapshot replaces the pending one for this key.\npendingValues.set(key, value);\nconst inFlightWrite = inFlightWrites.get(key);\nif (inFlightWrite != null) return inFlightWrite;\nconst write = drainWrites(key).finally(() => inFlightWrites.delete(key));\ninFlightWrites.set(key, write);\nreturn write;\n\n// One writer drains the latest pending value for each file.\nasync function drainWrites(key: string) {\n  while (pendingValues.has(key)) {\n    const value = pendingValues.get(key);\n    pendingValues.delete(key);\n    if (value == null) continue;\n    await new File(Paths.document, key).write(value);\n  }\n}"
+      },
+      {
+        "_type": "block",
+        "_key": "b2",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "If A is being written while B and C arrive, write A, then C. These are complete snapshots of the queue, so C replaces B without dropping the events it still contains. Different storage keys have independent writers.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b3",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "Our adapter also released the in-flight entry after completion, handled failed writes, and trimmed existing oversized queues on load. It received strings that PostHog had already serialized. Bounding those pending copies helped; reducing duplicate events and queue size reduced the work feeding them.",
+            "marks": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "_type": "engineeringDeepDive",
+    "_key": "bundles-implementation",
+    "title": "Show me the change",
+    "teaser": "Replace a heavy import with the tiny helper the editor needs.",
+    "body": [
+      {
+        "_type": "engineeringCode",
+        "_key": "b0",
+        "language": "diff",
+        "label": "The underline helper, kept inside the DOM entry",
+        "code": "-import { UNDERLINE } from \"@/design-system/RichTextEditor/transformers\";\n+import type { TextFormatTransformer } from \"@lexical/markdown\";\n+\n+const UNDERLINE: TextFormatTransformer = {\n+  format: [\"underline\"],\n+  tag: \"_\",\n+  type: \"text-format\",\n+};"
+      },
+      {
+        "_type": "block",
+        "_key": "b1",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "The helper was small. Its import path was not. That shared module reached into app code the DOM editor did not need. Keeping these few lines local removed that path; the type-only import added no runtime dependency.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b2",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "We also removed ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "use dom",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": " from modules that were not meant to create their own DOM boundaries. The actual DOM entry kept it. Rebuild and inspect the output in Expo Atlas: the reduction came from both changes, not this one helper alone.",
+            "marks": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "_type": "engineeringDeepDive",
+    "_key": "dx-implementation",
+    "title": "Show me the change",
+    "teaser": "Tell Prisma which configurations the app actually uses.",
+    "body": [
+      {
+        "_type": "engineeringCode",
+        "_key": "b0",
+        "language": "diff",
+        "label": "The constructor change; existing runtime options omitted",
+        "code": "+type AppPrismaClientOptions = Prisma.PrismaClientOptions & {\n+  log: Array<Prisma.LogLevel | Prisma.LogDefinition>;\n+  omit?: never;\n+};\n+\n-const client = new PrismaClient(options);\n+const client = new PrismaClient<\n+  AppPrismaClientOptions, \"query\", undefined\n+>(options);"
+      },
+      {
+        "_type": "block",
+        "_key": "b1",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "We never configured global field omissions. The third type argument, ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "undefined",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": ", makes that explicit; ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s3",
+            "text": "omit?: never",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s4",
+            "text": " prevents the options from contradicting it. These are type changes. The runtime configuration stays the same.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b2",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "We applied this to all five constructors, aligned extension inputs, and narrowed a helper to the model it actually used. The measured gain came from that combined change. Check your generated Prisma definitions before copying the generic positions: the constructor and the exported type alias use different ones.",
+            "marks": []
+          }
+        ]
+      }
+    ]
+  }
+]

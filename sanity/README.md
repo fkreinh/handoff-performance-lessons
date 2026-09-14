@@ -19,3 +19,7 @@ The frontend renders `engineeringDeepDive` as native `<details>` with `<summary>
 The V1–V5 labels, local preference, and comparison controls belong only to this review page, not the published article. Sanity is not installed or connected in this static repository; the schema is a handoff example to validate in the eventual Studio.
 
 Sanity references: [custom object types](https://www.sanity.io/docs/studio/object-type), [Portable Text configuration](https://www.sanity.io/docs/studio/portable-text-editor-configuration).
+
+## Article accordions
+
+`article-deep-dives.json` holds the seven selected article accordions in article order. Their `_key` values identify the matching section. Insert each object after its section's prose, before the next section heading. The source is `content/article-deep-dives.json`; run `node scripts/build-article-deep-dives.mjs` after editing it to refresh the HTML, Markdown, and Portable Text together. The original five Prisma alternatives remain available on the review page.

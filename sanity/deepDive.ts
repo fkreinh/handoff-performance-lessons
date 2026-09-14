@@ -8,7 +8,7 @@ export const engineeringCode = defineType({
     defineField({ name: 'label', title: 'Caption', type: 'string' }),
     defineField({
       name: 'language', type: 'string', initialValue: 'typescript',
-      options: { list: ['typescript', 'shell', 'diff', 'text'] },
+      options: { list: ['typescript', 'javascript', 'shell', 'diff', 'text'] },
       validation: (rule) => rule.required(),
     }),
     defineField({ name: 'code', type: 'text', rows: 14, validation: (rule) => rule.required() }),
