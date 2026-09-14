@@ -21,7 +21,7 @@
         "text": "The null check is deliberate. A zero total must take the fast path, not fall through because it is falsy. We kept the fallback because rows also arrive through other queries and mutations. The precomputed values travel with this response; they are not a long-lived cache of totals that could go stale after an edit."
       }
     ],
-    "title": "Code"
+    "title": "Under the hood"
   },
   {
     "section": "cache",
@@ -51,7 +51,7 @@
         "text": "Then make the mistake harder to repeat. We enabled the GraphQL operations lint rules with access to our schema and a processor for queries embedded in TypeScript. Custom cache identity fields need matching lint rules. And an ID does not make an incomplete query complete: missing fields and fetch policies still need their own fixes."
       }
     ],
-    "title": "Code"
+    "title": "Under the hood"
   },
   {
     "section": "navigation",
@@ -81,7 +81,7 @@
         "text": "The reset still runs only when the intended root is actually visible. We also avoid repeated resets and cancel scheduled cleanup if focus changes. Detail-to-detail navigation keeps its normal stack. The goal is to release the expensive screen trees while keeping the small amount of state that makes returning to a page feel right."
       }
     ],
-    "title": "Code"
+    "title": "Under the hood"
   },
   {
     "section": "sheets",
@@ -111,7 +111,7 @@
         "text": "This preserves mounted React state, but it does not unsubscribe queries or stop timers. Check which work actually disappeared in the profiler. If the cost comes from a subscription that keeps running while hidden, a render boundary alone will not solve it."
       }
     ],
-    "title": "Code"
+    "title": "Under the hood"
   },
   {
     "section": "persistence",
@@ -141,7 +141,7 @@
         "text": "Changing the queue limit was not enough for existing installs. We also trimmed oversized persisted queues when loading them. And this adapter received strings that PostHog had already serialized, so it could bound retained copies without avoiding every JSON conversion. Removing duplicate events reduced the work before it reached storage."
       }
     ],
-    "title": "Code"
+    "title": "Under the hood"
   },
   {
     "section": "bundles",
@@ -165,7 +165,7 @@
         "text": "Rebuild and inspect the output after each change. A smaller-looking source file says little about what ships. Our reported reduction includes both the isolated import and the removed boundaries; it is not a benchmark of this helper alone. For a larger shared helper, a small dependency-free module would be easier to maintain than copying it."
       }
     ],
-    "title": "Code"
+    "title": "Under the hood"
   },
   {
     "section": "dx",
@@ -189,6 +189,6 @@
         "text": "Check your generated Prisma definitions before copying the generic positions: the constructor and exported type alias use different ones. We added a compile-time check to catch the omission type widening again and compared emitted JavaScript. When measuring, keep the compiler and cold-cache settings fixed and inspect `--extendedDiagnostics`; otherwise a warm run can look like a type optimization."
       }
     ],
-    "title": "Code"
+    "title": "Under the hood"
   }
 ]

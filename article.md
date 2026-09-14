@@ -20,7 +20,7 @@ Count calculations as well as database calls. Caching a query doesn't stop you f
 
 <!-- deep-dive:calculations:start -->
 <details>
-<summary>Code</summary>
+<summary>Under the hood</summary>
 
 _Simplified parent and row resolvers_
 
@@ -64,7 +64,7 @@ Check the lint rules for your tools. GraphQL ESLint's [require-selections](https
 
 <!-- deep-dive:cache:start -->
 <details>
-<summary>Code</summary>
+<summary>Under the hood</summary>
 
 _One of the fragment fixes; unrelated fields omitted_
 
@@ -108,7 +108,7 @@ The native pattern was useful, but our web navigation needed different cleanup.
 
 <!-- deep-dive:navigation:start -->
 <details>
-<summary>Code</summary>
+<summary>Under the hood</summary>
 
 _Tab reset with retained params; focus guards and state validation omitted_
 
@@ -161,7 +161,7 @@ The UI already worked. This made it cheaper to keep around. That's often the gam
 
 <!-- deep-dive:sheets:start -->
 <details>
-<summary>Code</summary>
+<summary>Under the hood</summary>
 
 _Simplified from the row-panel change; other props omitted_
 
@@ -211,7 +211,7 @@ Follow what happens after an append. A small queue can still create a lot of wor
 
 <!-- deep-dive:persistence:start -->
 <details>
-<summary>Code</summary>
+<summary>Under the hood</summary>
 
 _Queue and storage configuration_
 
@@ -264,7 +264,7 @@ Keep these imports small and self-contained. Sometimes duplicating a few lines i
 
 <!-- deep-dive:bundles:start -->
 <details>
-<summary>Code</summary>
+<summary>Under the hood</summary>
 
 _The underline helper, kept inside the DOM entry_
 
@@ -302,7 +302,7 @@ That's a big win for AI coding too. Less waiting between editing and checking me
 
 <!-- deep-dive:dx:start -->
 <details>
-<summary>Code</summary>
+<summary>Under the hood</summary>
 
 _The constructor change; existing runtime options omitted_
 

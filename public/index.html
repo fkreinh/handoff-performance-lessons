@@ -1517,7 +1517,7 @@
                 times. Neither does making the function async.
               </p>
             <!-- deep-dive:calculations:start -->
-<details class="deep-dive" id="calculations-implementation"><summary><span class="deep-title">Code</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>Simplified parent and row resolvers</span><button type="button" class="deep-copy" aria-label="Copy code: Simplified parent and row resolvers. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Simplified parent and row resolvers"><code>async function resolveRows(estimate, rows) {
+<details class="deep-dive" id="calculations-implementation"><summary><span class="deep-title">Under the hood</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>Simplified parent and row resolvers</span><button type="button" class="deep-copy" aria-label="Copy code: Simplified parent and row resolvers. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Simplified parent and row resolvers"><code>async function resolveRows(estimate, rows) {
   const totals = await calculateEstimate(estimate.id);
   return rows.map((row) =&gt; ({
     ...row,
@@ -1574,7 +1574,7 @@ function resolveTotal(row) {
                 of this headache.
               </p>
             <!-- deep-dive:cache:start -->
-<details class="deep-dive" id="cache-implementation"><summary><span class="deep-title">Code</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>One of the fragment fixes; unrelated fields omitted</span><button type="button" class="deep-copy" aria-label="Copy code: One of the fragment fixes; unrelated fields omitted. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="One of the fragment fixes; unrelated fields omitted"><code><span class="dd-context"> fragment EstimateFragment on Estimate {</span>
+<details class="deep-dive" id="cache-implementation"><summary><span class="deep-title">Under the hood</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>One of the fragment fixes; unrelated fields omitted</span><button type="button" class="deep-copy" aria-label="Copy code: One of the fragment fixes; unrelated fields omitted. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="One of the fragment fixes; unrelated fields omitted"><code><span class="dd-context"> fragment EstimateFragment on Estimate {</span>
 <span class="dd-add">+  id</span>
 <span class="dd-context">   name</span>
 <span class="dd-context"> }</span></code></pre></figure>
@@ -1627,7 +1627,7 @@ function resolveTotal(row) {
                 different cleanup.
               </p>
             <!-- deep-dive:navigation:start -->
-<details class="deep-dive" id="navigation-implementation"><summary><span class="deep-title">Code</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>Tab reset with retained params; focus guards and state validation omitted</span><button type="button" class="deep-copy" aria-label="Copy code: Tab reset with retained params; focus guards and state validation omitted. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Tab reset with retained params; focus guards and state validation omitted"><code>// Once the target root is visible, read its active tab.
+<details class="deep-dive" id="navigation-implementation"><summary><span class="deep-title">Under the hood</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>Tab reset with retained params; focus guards and state validation omitted</span><button type="button" class="deep-copy" aria-label="Copy code: Tab reset with retained params; focus guards and state validation omitted. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Tab reset with retained params; focus guards and state validation omitted"><code>// Once the target root is visible, read its active tab.
 const root = state.routes[state.index];
 const tabState = root.state;
 const activeTab = tabState?.routes[tabState.index];
@@ -1684,7 +1684,7 @@ navigation.dispatch(CommonActions.reset({
                 to do.
               </p>
             <!-- deep-dive:sheets:start -->
-<details class="deep-dive" id="sheets-implementation"><summary><span class="deep-title">Code</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>Simplified from the row-panel change; other props omitted</span><button type="button" class="deep-copy" aria-label="Copy code: Simplified from the row-panel change; other props omitted. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Simplified from the row-panel change; other props omitted"><code><span class="dd-add">+&lt;Freeze freeze={!panelOpen}&gt;</span>
+<details class="deep-dive" id="sheets-implementation"><summary><span class="deep-title">Under the hood</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>Simplified from the row-panel change; other props omitted</span><button type="button" class="deep-copy" aria-label="Copy code: Simplified from the row-panel change; other props omitted. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Simplified from the row-panel change; other props omitted"><code><span class="dd-add">+&lt;Freeze freeze={!panelOpen}&gt;</span>
 <span class="dd-context">   &lt;RowPanelProvider&gt;</span>
 <span class="dd-context">     &lt;BottomSheet onDismiss={handleDismiss}&gt;</span>
 <span class="dd-context">       &lt;RowForm /&gt;</span>
@@ -1741,7 +1741,7 @@ function handleDismiss() {
                 create a lot of work if every change rewrites the whole thing.
               </p>
             <!-- deep-dive:persistence:start -->
-<details class="deep-dive" id="persistence-implementation"><summary><span class="deep-title">Code</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>Queue and storage configuration</span><button type="button" class="deep-copy" aria-label="Copy code: Queue and storage configuration. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Queue and storage configuration"><code><span class="dd-remove">-maxQueueSize: 200,</span>
+<details class="deep-dive" id="persistence-implementation"><summary><span class="deep-title">Under the hood</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>Queue and storage configuration</span><button type="button" class="deep-copy" aria-label="Copy code: Queue and storage configuration. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Queue and storage configuration"><code><span class="dd-remove">-maxQueueSize: 200,</span>
 <span class="dd-add">+maxQueueSize: 30,</span>
 <span class="dd-add">+customStorage: createPostHogStorage(),</span></code></pre></figure>
 <figure class="deep-code"><figcaption><span>setItem and drainWrites excerpts; reads and retries omitted</span><button type="button" class="deep-copy" aria-label="Copy code: setItem and drainWrites excerpts; reads and retries omitted. Example 2.">Copy</button></figcaption><pre tabindex="0" aria-label="setItem and drainWrites excerpts; reads and retries omitted"><code>// Every new snapshot replaces the pending one for this key.
@@ -1800,7 +1800,7 @@ async function drainWrites(key: string) {
                 bundle along with them.
               </p>
             <!-- deep-dive:bundles:start -->
-<details class="deep-dive" id="bundles-implementation"><summary><span class="deep-title">Code</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>The underline helper, kept inside the DOM entry</span><button type="button" class="deep-copy" aria-label="Copy code: The underline helper, kept inside the DOM entry. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="The underline helper, kept inside the DOM entry"><code><span class="dd-remove">-import { UNDERLINE } from &quot;@/design-system/RichTextEditor/transformers&quot;;</span>
+<details class="deep-dive" id="bundles-implementation"><summary><span class="deep-title">Under the hood</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>The underline helper, kept inside the DOM entry</span><button type="button" class="deep-copy" aria-label="Copy code: The underline helper, kept inside the DOM entry. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="The underline helper, kept inside the DOM entry"><code><span class="dd-remove">-import { UNDERLINE } from &quot;@/design-system/RichTextEditor/transformers&quot;;</span>
 <span class="dd-add">+import type { TextFormatTransformer } from &quot;@lexical/markdown&quot;;</span>
 <span class="dd-add">+</span>
 <span class="dd-add">+const UNDERLINE: TextFormatTransformer = {</span>
@@ -1856,7 +1856,7 @@ async function drainWrites(key: string) {
                 as normal. Even a faster compiler benefits from less work.
               </p>
             <!-- deep-dive:dx:start -->
-<details class="deep-dive" id="dx-implementation"><summary><span class="deep-title">Code</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>The constructor change; existing runtime options omitted</span><button type="button" class="deep-copy" aria-label="Copy code: The constructor change; existing runtime options omitted. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="The constructor change; existing runtime options omitted"><code><span class="dd-add">+type AppPrismaClientOptions = Prisma.PrismaClientOptions &amp; {</span>
+<details class="deep-dive" id="dx-implementation"><summary><span class="deep-title">Under the hood</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>The constructor change; existing runtime options omitted</span><button type="button" class="deep-copy" aria-label="Copy code: The constructor change; existing runtime options omitted. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="The constructor change; existing runtime options omitted"><code><span class="dd-add">+type AppPrismaClientOptions = Prisma.PrismaClientOptions &amp; {</span>
 <span class="dd-add">+  log: Array&lt;Prisma.LogLevel | Prisma.LogDefinition&gt;;</span>
 <span class="dd-add">+  omit?: never;</span>
 <span class="dd-add">+};</span>

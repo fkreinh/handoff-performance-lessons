@@ -2,7 +2,7 @@
   {
     "_type": "engineeringDeepDive",
     "_key": "calculations-implementation",
-    "title": "Code",
+    "title": "Under the hood",
     "body": [
       {
         "_type": "engineeringCode",
@@ -72,7 +72,7 @@
   {
     "_type": "engineeringDeepDive",
     "_key": "cache-implementation",
-    "title": "Code",
+    "title": "Under the hood",
     "body": [
       {
         "_type": "engineeringCode",
@@ -149,7 +149,7 @@
   {
     "_type": "engineeringDeepDive",
     "_key": "navigation-implementation",
-    "title": "Code",
+    "title": "Under the hood",
     "body": [
       {
         "_type": "engineeringCode",
@@ -212,7 +212,7 @@
   {
     "_type": "engineeringDeepDive",
     "_key": "sheets-implementation",
-    "title": "Code",
+    "title": "Under the hood",
     "body": [
       {
         "_type": "engineeringCode",
@@ -275,7 +275,7 @@
   {
     "_type": "engineeringDeepDive",
     "_key": "persistence-implementation",
-    "title": "Code",
+    "title": "Under the hood",
     "body": [
       {
         "_type": "engineeringCode",
@@ -352,7 +352,7 @@
   {
     "_type": "engineeringDeepDive",
     "_key": "bundles-implementation",
-    "title": "Code",
+    "title": "Under the hood",
     "body": [
       {
         "_type": "engineeringCode",
@@ -436,7 +436,7 @@
   {
     "_type": "engineeringDeepDive",
     "_key": "dx-implementation",
-    "title": "Code",
+    "title": "Under the hood",
     "body": [
       {
         "_type": "engineeringCode",
