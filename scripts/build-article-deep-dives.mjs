@@ -9,10 +9,10 @@ function blockHtml(block, entry, index) {
   if (block.type === 'paragraph') return `<p>${inline(block.text)}</p>`;
   if (block.type !== 'code') throw new Error('Unsupported article block');
   const code = block.language === 'diff' ? block.code.split('\n').map((line) => `<span class="${line.startsWith('+') ? 'dd-add' : line.startsWith('-') ? 'dd-remove' : 'dd-context'}">${escape(line)}</span>`).join('\n') : escape(block.code);
-  return `<figure class="deep-code"><figcaption><span>${escape(block.label)}</span><button type="button" class="deep-copy" aria-label="Copy code: ${escape(entry.teaser)} Example ${index + 1}.">Copy</button></figcaption><pre tabindex="0" aria-label="${escape(block.label)}"><code>${code}</code></pre></figure>`;
+  return `<figure class="deep-code"><figcaption><span>${escape(block.label)}</span><button type="button" class="deep-copy" aria-label="Copy code: ${escape(block.label)}. Example ${index + 1}.">Copy</button></figcaption><pre tabindex="0" aria-label="${escape(block.label)}"><code>${code}</code></pre></figure>`;
 }
 function accordion(entry) {
-  return `<!-- deep-dive:${entry.section}:start -->\n<details class="deep-dive" id="${entry.section}-implementation"><summary><span><span class="deep-title">${escape(entry.title)}</span><span class="deep-teaser">${escape(entry.teaser)}</span></span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body">${entry.blocks.map((block, index) => blockHtml(block, entry, index)).join('\n')}</div></details>\n<!-- deep-dive:${entry.section}:end -->\n`;
+  return `<!-- deep-dive:${entry.section}:start -->\n<details class="deep-dive" id="${entry.section}-implementation"><summary><span class="deep-title">${escape(entry.title)}</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body">${entry.blocks.map((block, index) => blockHtml(block, entry, index)).join('\n')}</div></details>\n<!-- deep-dive:${entry.section}:end -->\n`;
 }
 let html = await readFile(new URL('public/index.html', root), 'utf8');
 html = html.replace(/<!-- deep-dive:([a-z]+):start -->[\s\S]*?<!-- deep-dive:\1:end -->\n/g, '');
@@ -35,12 +35,12 @@ let cursor = 0;
 md = md.replace(/(^## (?:[1-6]\. |Bonus:)[\s\S]*?)(?=^## |$(?![\s\S]))/gm, (section) => {
   const entry = entries[cursor++];
   const blocks = entry.blocks.map((block) => block.type === 'paragraph' ? block.text : `_${block.label}_\n\n\`\`\`${block.language}\n${block.code}\n\`\`\``).join('\n\n');
-  return `${section}<!-- deep-dive:${entry.section}:start -->\n<details>\n<summary>Show me the change — ${escape(entry.teaser)}</summary>\n\n${blocks}\n\n</details>\n<!-- deep-dive:${entry.section}:end -->\n\n`;
+  return `${section}<!-- deep-dive:${entry.section}:start -->\n<details>\n<summary>${escape(entry.title)}</summary>\n\n${blocks}\n\n</details>\n<!-- deep-dive:${entry.section}:end -->\n\n`;
 });
 if (cursor !== 7) throw new Error('Expected seven Markdown sections');
 await writeFile(new URL('article.md', root), md);
 const portable = entries.map((entry) => ({
-  _type: 'engineeringDeepDive', _key: `${entry.section}-implementation`, title: entry.title, teaser: entry.teaser,
+  _type: 'engineeringDeepDive', _key: `${entry.section}-implementation`, title: entry.title,
   body: entry.blocks.map((block, index) => block.type === 'code' ? {
     _type: 'engineeringCode', _key: `b${index}`, language: block.language, label: block.label, code: block.code,
   } : {

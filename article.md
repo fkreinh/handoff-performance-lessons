@@ -20,7 +20,7 @@ Count calculations as well as database calls. Caching a query doesn't stop you f
 
 <!-- deep-dive:calculations:start -->
 <details>
-<summary>Show me the change — Calculate once. Let each row reuse the result.</summary>
+<summary>Code</summary>
 
 _Simplified parent and row resolvers_
 
@@ -41,9 +41,11 @@ function resolveTotal(row) {
 }
 ```
 
-The important move was carrying the computed values down to the row resolvers. Loading the same rows from a cache was still expensive if every field then recalculated the estimate. Here, the helper names are simplified; `totals` represents the results indexed by row ID.
+The parent computes a result for each row and passes it down. The row resolver then reads that value instead of walking the estimate again. A DataLoader can save a database round trip while leaving all of that CPU work intact, so we had to fix both layers.
 
-Use a null check, not a truthiness check. Zero is a valid result. We kept the fallback for rows arriving through other paths and batched the supporting reads in the parent too. Moving the work only helps if the children actually stop doing it.
+Here, `totals` is a map keyed by row ID. That matters too: replacing a repeated calculation with a repeated search through the entire result array can leave another quadratic loop behind. Build the lookup once, then read from it.
+
+The null check is deliberate. A zero total must take the fast path, not fall through because it is falsy. We kept the fallback because rows also arrive through other queries and mutations. The precomputed values travel with this response; they are not a long-lived cache of totals that could go stale after an edit.
 
 </details>
 <!-- deep-dive:calculations:end -->
@@ -62,7 +64,7 @@ Check the lint rules for your tools. GraphQL ESLint's [require-selections](https
 
 <!-- deep-dive:cache:start -->
 <details>
-<summary>Show me the change — Include the identity, even when the UI never displays it.</summary>
+<summary>Code</summary>
 
 _One of the fragment fixes; unrelated fields omitted_
 
@@ -72,8 +74,6 @@ _One of the fragment fixes; unrelated fields omitted_
    name
  }
 ```
-
-The UI only needed the name. The cache needed the ID. The same applies to nested entities: an ID on the parent does not identify every object below it.
 
 _The same fix in a manual cache write_
 
@@ -85,7 +85,11 @@ _The same fix in a manual cache write_
  },
 ```
 
-We checked manual writes as well as server responses. Then we enabled the GraphQL operations lint rules so missing `id` selections would fail before review. The rule needs your schema, and embedded queries need the GraphQL processor. If your cache uses custom identity fields, require those instead.
+Apollo normally identifies an entity using its `__typename` and ID. A name alone is just a value inside a particular response; it does not give the cache a reliable identity to share across queries. Nested entities need their own identity too. Selecting the estimate ID does not identify its contact or organization.
+
+Manual writes need the same care. We added the message ID to the data being written, so it matched what the fragment expected. When investigating this, check the query selection, the actual response, and any code that writes the same entity locally.
+
+Then make the mistake harder to repeat. We enabled the GraphQL operations lint rules with access to our schema and a processor for queries embedded in TypeScript. Custom cache identity fields need matching lint rules. And an ID does not make an incomplete query complete: missing fields and fetch policies still need their own fixes.
 
 </details>
 <!-- deep-dive:cache:end -->
@@ -104,32 +108,43 @@ The native pattern was useful, but our web navigation needed different cleanup.
 
 <!-- deep-dive:navigation:start -->
 <details>
-<summary>Show me the change — Clear retained detail screens at a deliberate root boundary.</summary>
+<summary>Code</summary>
 
-_Reset action from the root-focus hook; guards shown in simplified form_
+_Tab reset with retained params; focus guards and state validation omitted_
 
 ```typescript
-// Run on root focus, using the main stack's navigation object.
-if (pathname !== rootHref) return;
-if (navigation.getState().routes.length <= 1) return;
+// Once the target root is visible, read its active tab.
+const root = state.routes[state.index];
+const tabState = root.state;
+const activeTab = tabState?.routes[tabState.index];
 
-navigation.dispatch(
-  CommonActions.reset({
-    index: 0,
-    routes: [{
-      name: "(tabs)",
-      state: {
-        index: 0,
-        routes: [{ name: selectedTab }],
-      },
-    }],
-  }),
-);
+navigation.dispatch(CommonActions.reset({
+  index: 0,
+  routes: [{
+    name: "(tabs)",
+    state: {
+      index: 0,
+      routes: [{
+        name: selectedTab,
+        params: activeTab?.params,
+      }],
+    },
+  }],
+}));
 ```
 
-Reaching a root page was our cleanup boundary. We reset the main stack to the selected tab, which removed the old detail trees. Freezing a retained screen could reduce its rendering; removing it released its observers.
+_The tab bar also passes the destination’s retained params_
 
-The real hook also checked that a reset was needed, guarded against re-entry, and canceled scheduled cleanup when focus changed. Keep that boundary explicit: normal detail-to-detail navigation should still stack. The route names here belong to our navigator.
+```diff
+-navigation.navigate(route.name);
++navigation.navigate(route.name, route.params);
+```
+
+The first reset removed the retained screens, but rebuilding a route from its name alone also discarded its parameters. A follow-up carried the active tab’s params into the replacement route. That kept the selected date, view, and filters while still releasing the old detail trees. For a root outside the tab navigator, we preserved the root route’s own params instead.
+
+There were two places to fix. Cleanup had to preserve the destination state, and the navigation controls had to pass it back when revisiting a tab. Otherwise a sidebar or tab press could erase the params before cleanup even ran. On web, we reused only strings and arrays of strings from retained params, rather than copying nested navigation objects into the URL.
+
+The reset still runs only when the intended root is actually visible. We also avoid repeated resets and cancel scheduled cleanup if focus changes. Detail-to-detail navigation keeps its normal stack. The goal is to release the expensive screen trees while keeping the small amount of state that makes returning to a page feel right.
 
 </details>
 <!-- deep-dive:navigation:end -->
@@ -146,7 +161,7 @@ The UI already worked. This made it cheaper to keep around. That's often the gam
 
 <!-- deep-dive:sheets:start -->
 <details>
-<summary>Show me the change — Put the expensive provider inside the freeze boundary too.</summary>
+<summary>Code</summary>
 
 _Simplified from the row-panel change; other props omitted_
 
@@ -159,8 +174,6 @@ _Simplified from the row-panel change; other props omitted_
    </RowPanelProvider>
 +</Freeze>
 ```
-
-Freezing just the form leaves its provider outside the boundary, still doing work. We wrapped both. The open-state control stayed outside so it could wake the tree back up.
 
 _Resume before presenting; freeze after dismissal_
 
@@ -175,7 +188,11 @@ function handleDismiss() {
 }
 ```
 
-Use the sheet’s dismissal callback, not the start of its closing animation. That keeps the transition live and the mounted form state intact. The target is unnecessary rendering; freezing is not a general pause button for background work.
+The boundary has to include the work you want to stop. Freezing the form alone still leaves its provider free to rerender, derive values, and notify consumers. We moved the boundary above both. The state that controls freezing stayed outside it, so opening the panel could wake the tree back up.
+
+The ordering matters. We set the panel active before presenting it, then froze it from the dismissal callback. Freezing as soon as someone taps Close can catch the sheet halfway through its transition. The animation frame here is the scheduling used by our sheet integration; match this to the lifecycle of the component you use.
+
+This preserves mounted React state, but it does not unsubscribe queries or stop timers. Check which work actually disappeared in the profiler. If the cost comes from a subscription that keeps running while hidden, a render boundary alone will not solve it.
 
 </details>
 <!-- deep-dive:sheets:end -->
@@ -194,7 +211,7 @@ Follow what happens after an append. A small queue can still create a lot of wor
 
 <!-- deep-dive:persistence:start -->
 <details>
-<summary>Show me the change — Keep the current write and the latest waiting snapshot.</summary>
+<summary>Code</summary>
 
 _Queue and storage configuration_
 
@@ -226,9 +243,11 @@ async function drainWrites(key: string) {
 }
 ```
 
-If A is being written while B and C arrive, write A, then C. These are complete snapshots of the queue, so C replaces B without dropping the events it still contains. Different storage keys have independent writers.
+If A is being written while B and C arrive, write A, then C. Each value is a complete snapshot of the queue, so C replaces B without losing the events it still contains. This would be wrong for a stream of independent events: the optimization depends on newer snapshots superseding older ones.
 
-Our adapter also released the in-flight entry after completion, handled failed writes, and trimmed existing oversized queues on load. It received strings that PostHog had already serialized. Bounding those pending copies helped; reducing duplicate events and queue size reduced the work feeding them.
+We track one active writer per storage key. New calls replace the pending value and join that write instead of launching another one. The writer drains the latest value, and `finally` releases its slot. The full adapter also handled failures, including a newer value arriving while the active write failed; those paths are omitted here.
+
+Changing the queue limit was not enough for existing installs. We also trimmed oversized persisted queues when loading them. And this adapter received strings that PostHog had already serialized, so it could bound retained copies without avoiding every JSON conversion. Removing duplicate events reduced the work before it reached storage.
 
 </details>
 <!-- deep-dive:persistence:end -->
@@ -245,7 +264,7 @@ Keep these imports small and self-contained. Sometimes duplicating a few lines i
 
 <!-- deep-dive:bundles:start -->
 <details>
-<summary>Show me the change — Replace a heavy import with the tiny helper the editor needs.</summary>
+<summary>Code</summary>
 
 _The underline helper, kept inside the DOM entry_
 
@@ -260,9 +279,11 @@ _The underline helper, kept inside the DOM entry_
 +};
 ```
 
-The helper was small. Its import path was not. That shared module reached into app code the DOM editor did not need. Keeping these few lines local removed that path; the type-only import added no runtime dependency.
+The useful thing to inspect is the path from the DOM entry to the unwanted dependency. Our underline transformer came from a shared module that also reached GraphQL and telemetry. The editor did not need those features, but its import graph still reached them. Keeping this tiny value local cut that path. The `import type` disappears from the JavaScript output.
 
-We also removed `use dom` from modules that were not meant to create their own DOM boundaries. The actual DOM entry kept it. Rebuild and inspect the output in Expo Atlas: the reduction came from both changes, not this one helper alone.
+We also checked where `use dom` was declared. It belongs at an intentional DOM boundary, not automatically on every module used by that component. We removed unnecessary directives from helpers and wrappers while keeping the real DOM entry intact.
+
+Rebuild and inspect the output after each change. A smaller-looking source file says little about what ships. Our reported reduction includes both the isolated import and the removed boundaries; it is not a benchmark of this helper alone. For a larger shared helper, a small dependency-free module would be easier to maintain than copying it.
 
 </details>
 <!-- deep-dive:bundles:end -->
@@ -281,7 +302,7 @@ That's a big win for AI coding too. Less waiting between editing and checking me
 
 <!-- deep-dive:dx:start -->
 <details>
-<summary>Show me the change — Tell Prisma which configurations the app actually uses.</summary>
+<summary>Code</summary>
 
 _The constructor change; existing runtime options omitted_
 
@@ -297,9 +318,11 @@ _The constructor change; existing runtime options omitted_
 +>(options);
 ```
 
-We never configured global field omissions. The third type argument, `undefined`, makes that explicit; `omit?: never` prevents the options from contradicting it. These are type changes. The runtime configuration stays the same.
+The expensive part was not the number of lines in the constructor. Prisma’s inferred type described global field-omission configurations we never used. When the client crossed transaction and extension boundaries, TypeScript had to expand and compare those model types.
 
-We applied this to all five constructors, aligned extension inputs, and narrowed a helper to the model it actually used. The measured gain came from that combined change. Check your generated Prisma definitions before copying the generic positions: the constructor and the exported type alias use different ones.
+The third constructor type argument, `undefined`, makes “no global omissions” explicit. `omit?: never` stops the options from contradicting that contract. Neither changes the runtime data. We applied the same contract to all five constructors and extension inputs, then narrowed a helper to the one model it used. The measured gain came from the combined change.
+
+Check your generated Prisma definitions before copying the generic positions: the constructor and exported type alias use different ones. We added a compile-time check to catch the omission type widening again and compared emitted JavaScript. When measuring, keep the compiler and cold-cache settings fixed and inspect `--extendedDiagnostics`; otherwise a warm run can look like a type optimization.
 
 </details>
 <!-- deep-dive:dx:end -->

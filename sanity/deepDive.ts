@@ -22,7 +22,7 @@ export const engineeringDeepDive = defineType({
   type: 'object',
   fields: [
     defineField({ name: 'title', type: 'string', validation: (rule) => rule.required() }),
-    defineField({ name: 'teaser', type: 'text', rows: 2, validation: (rule) => rule.required() }),
+    defineField({ name: 'teaser', type: 'text', rows: 2, description: 'Optional; omit for a compact code accordion.' }),
     defineField({
       name: 'body', type: 'array',
       of: [

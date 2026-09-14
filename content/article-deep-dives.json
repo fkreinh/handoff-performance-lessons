@@ -1,7 +1,6 @@
 [
   {
     "section": "calculations",
-    "teaser": "Calculate once. Let each row reuse the result.",
     "blocks": [
       {
         "type": "code",
@@ -11,28 +10,27 @@
       },
       {
         "type": "paragraph",
-        "text": "The important move was carrying the computed values down to the row resolvers. Loading the same rows from a cache was still expensive if every field then recalculated the estimate. Here, the helper names are simplified; `totals` represents the results indexed by row ID."
+        "text": "The parent computes a result for each row and passes it down. The row resolver then reads that value instead of walking the estimate again. A DataLoader can save a database round trip while leaving all of that CPU work intact, so we had to fix both layers."
       },
       {
         "type": "paragraph",
-        "text": "Use a null check, not a truthiness check. Zero is a valid result. We kept the fallback for rows arriving through other paths and batched the supporting reads in the parent too. Moving the work only helps if the children actually stop doing it."
+        "text": "Here, `totals` is a map keyed by row ID. That matters too: replacing a repeated calculation with a repeated search through the entire result array can leave another quadratic loop behind. Build the lookup once, then read from it."
+      },
+      {
+        "type": "paragraph",
+        "text": "The null check is deliberate. A zero total must take the fast path, not fall through because it is falsy. We kept the fallback because rows also arrive through other queries and mutations. The precomputed values travel with this response; they are not a long-lived cache of totals that could go stale after an edit."
       }
     ],
-    "title": "Show me the change"
+    "title": "Code"
   },
   {
     "section": "cache",
-    "teaser": "Include the identity, even when the UI never displays it.",
     "blocks": [
       {
         "type": "code",
         "language": "diff",
         "label": "One of the fragment fixes; unrelated fields omitted",
         "code": " fragment EstimateFragment on Estimate {\n+  id\n   name\n }"
-      },
-      {
-        "type": "paragraph",
-        "text": "The UI only needed the name. The cache needed the ID. The same applies to nested entities: an ID on the parent does not identify every object below it."
       },
       {
         "type": "code",
@@ -42,45 +40,57 @@
       },
       {
         "type": "paragraph",
-        "text": "We checked manual writes as well as server responses. Then we enabled the GraphQL operations lint rules so missing `id` selections would fail before review. The rule needs your schema, and embedded queries need the GraphQL processor. If your cache uses custom identity fields, require those instead."
+        "text": "Apollo normally identifies an entity using its `__typename` and ID. A name alone is just a value inside a particular response; it does not give the cache a reliable identity to share across queries. Nested entities need their own identity too. Selecting the estimate ID does not identify its contact or organization."
+      },
+      {
+        "type": "paragraph",
+        "text": "Manual writes need the same care. We added the message ID to the data being written, so it matched what the fragment expected. When investigating this, check the query selection, the actual response, and any code that writes the same entity locally."
+      },
+      {
+        "type": "paragraph",
+        "text": "Then make the mistake harder to repeat. We enabled the GraphQL operations lint rules with access to our schema and a processor for queries embedded in TypeScript. Custom cache identity fields need matching lint rules. And an ID does not make an incomplete query complete: missing fields and fetch policies still need their own fixes."
       }
     ],
-    "title": "Show me the change"
+    "title": "Code"
   },
   {
     "section": "navigation",
-    "teaser": "Clear retained detail screens at a deliberate root boundary.",
     "blocks": [
       {
         "type": "code",
         "language": "typescript",
-        "label": "Reset action from the root-focus hook; guards shown in simplified form",
-        "code": "// Run on root focus, using the main stack's navigation object.\nif (pathname !== rootHref) return;\nif (navigation.getState().routes.length <= 1) return;\n\nnavigation.dispatch(\n  CommonActions.reset({\n    index: 0,\n    routes: [{\n      name: \"(tabs)\",\n      state: {\n        index: 0,\n        routes: [{ name: selectedTab }],\n      },\n    }],\n  }),\n);"
+        "label": "Tab reset with retained params; focus guards and state validation omitted",
+        "code": "// Once the target root is visible, read its active tab.\nconst root = state.routes[state.index];\nconst tabState = root.state;\nconst activeTab = tabState?.routes[tabState.index];\n\nnavigation.dispatch(CommonActions.reset({\n  index: 0,\n  routes: [{\n    name: \"(tabs)\",\n    state: {\n      index: 0,\n      routes: [{\n        name: selectedTab,\n        params: activeTab?.params,\n      }],\n    },\n  }],\n}));"
+      },
+      {
+        "type": "code",
+        "language": "diff",
+        "label": "The tab bar also passes the destination’s retained params",
+        "code": "-navigation.navigate(route.name);\n+navigation.navigate(route.name, route.params);"
       },
       {
         "type": "paragraph",
-        "text": "Reaching a root page was our cleanup boundary. We reset the main stack to the selected tab, which removed the old detail trees. Freezing a retained screen could reduce its rendering; removing it released its observers."
+        "text": "The first reset removed the retained screens, but rebuilding a route from its name alone also discarded its parameters. A follow-up carried the active tab’s params into the replacement route. That kept the selected date, view, and filters while still releasing the old detail trees. For a root outside the tab navigator, we preserved the root route’s own params instead."
       },
       {
         "type": "paragraph",
-        "text": "The real hook also checked that a reset was needed, guarded against re-entry, and canceled scheduled cleanup when focus changed. Keep that boundary explicit: normal detail-to-detail navigation should still stack. The route names here belong to our navigator."
+        "text": "There were two places to fix. Cleanup had to preserve the destination state, and the navigation controls had to pass it back when revisiting a tab. Otherwise a sidebar or tab press could erase the params before cleanup even ran. On web, we reused only strings and arrays of strings from retained params, rather than copying nested navigation objects into the URL."
+      },
+      {
+        "type": "paragraph",
+        "text": "The reset still runs only when the intended root is actually visible. We also avoid repeated resets and cancel scheduled cleanup if focus changes. Detail-to-detail navigation keeps its normal stack. The goal is to release the expensive screen trees while keeping the small amount of state that makes returning to a page feel right."
       }
     ],
-    "title": "Show me the change"
+    "title": "Code"
   },
   {
     "section": "sheets",
-    "teaser": "Put the expensive provider inside the freeze boundary too.",
     "blocks": [
       {
         "type": "code",
         "language": "diff",
         "label": "Simplified from the row-panel change; other props omitted",
         "code": "+<Freeze freeze={!panelOpen}>\n   <RowPanelProvider>\n     <BottomSheet onDismiss={handleDismiss}>\n       <RowForm />\n     </BottomSheet>\n   </RowPanelProvider>\n+</Freeze>"
-      },
-      {
-        "type": "paragraph",
-        "text": "Freezing just the form leaves its provider outside the boundary, still doing work. We wrapped both. The open-state control stayed outside so it could wake the tree back up."
       },
       {
         "type": "code",
@@ -90,14 +100,21 @@
       },
       {
         "type": "paragraph",
-        "text": "Use the sheet’s dismissal callback, not the start of its closing animation. That keeps the transition live and the mounted form state intact. The target is unnecessary rendering; freezing is not a general pause button for background work."
+        "text": "The boundary has to include the work you want to stop. Freezing the form alone still leaves its provider free to rerender, derive values, and notify consumers. We moved the boundary above both. The state that controls freezing stayed outside it, so opening the panel could wake the tree back up."
+      },
+      {
+        "type": "paragraph",
+        "text": "The ordering matters. We set the panel active before presenting it, then froze it from the dismissal callback. Freezing as soon as someone taps Close can catch the sheet halfway through its transition. The animation frame here is the scheduling used by our sheet integration; match this to the lifecycle of the component you use."
+      },
+      {
+        "type": "paragraph",
+        "text": "This preserves mounted React state, but it does not unsubscribe queries or stop timers. Check which work actually disappeared in the profiler. If the cost comes from a subscription that keeps running while hidden, a render boundary alone will not solve it."
       }
     ],
-    "title": "Show me the change"
+    "title": "Code"
   },
   {
     "section": "persistence",
-    "teaser": "Keep the current write and the latest waiting snapshot.",
     "blocks": [
       {
         "type": "code",
@@ -113,18 +130,21 @@
       },
       {
         "type": "paragraph",
-        "text": "If A is being written while B and C arrive, write A, then C. These are complete snapshots of the queue, so C replaces B without dropping the events it still contains. Different storage keys have independent writers."
+        "text": "If A is being written while B and C arrive, write A, then C. Each value is a complete snapshot of the queue, so C replaces B without losing the events it still contains. This would be wrong for a stream of independent events: the optimization depends on newer snapshots superseding older ones."
       },
       {
         "type": "paragraph",
-        "text": "Our adapter also released the in-flight entry after completion, handled failed writes, and trimmed existing oversized queues on load. It received strings that PostHog had already serialized. Bounding those pending copies helped; reducing duplicate events and queue size reduced the work feeding them."
+        "text": "We track one active writer per storage key. New calls replace the pending value and join that write instead of launching another one. The writer drains the latest value, and `finally` releases its slot. The full adapter also handled failures, including a newer value arriving while the active write failed; those paths are omitted here."
+      },
+      {
+        "type": "paragraph",
+        "text": "Changing the queue limit was not enough for existing installs. We also trimmed oversized persisted queues when loading them. And this adapter received strings that PostHog had already serialized, so it could bound retained copies without avoiding every JSON conversion. Removing duplicate events reduced the work before it reached storage."
       }
     ],
-    "title": "Show me the change"
+    "title": "Code"
   },
   {
     "section": "bundles",
-    "teaser": "Replace a heavy import with the tiny helper the editor needs.",
     "blocks": [
       {
         "type": "code",
@@ -134,18 +154,21 @@
       },
       {
         "type": "paragraph",
-        "text": "The helper was small. Its import path was not. That shared module reached into app code the DOM editor did not need. Keeping these few lines local removed that path; the type-only import added no runtime dependency."
+        "text": "The useful thing to inspect is the path from the DOM entry to the unwanted dependency. Our underline transformer came from a shared module that also reached GraphQL and telemetry. The editor did not need those features, but its import graph still reached them. Keeping this tiny value local cut that path. The `import type` disappears from the JavaScript output."
       },
       {
         "type": "paragraph",
-        "text": "We also removed `use dom` from modules that were not meant to create their own DOM boundaries. The actual DOM entry kept it. Rebuild and inspect the output in Expo Atlas: the reduction came from both changes, not this one helper alone."
+        "text": "We also checked where `use dom` was declared. It belongs at an intentional DOM boundary, not automatically on every module used by that component. We removed unnecessary directives from helpers and wrappers while keeping the real DOM entry intact."
+      },
+      {
+        "type": "paragraph",
+        "text": "Rebuild and inspect the output after each change. A smaller-looking source file says little about what ships. Our reported reduction includes both the isolated import and the removed boundaries; it is not a benchmark of this helper alone. For a larger shared helper, a small dependency-free module would be easier to maintain than copying it."
       }
     ],
-    "title": "Show me the change"
+    "title": "Code"
   },
   {
     "section": "dx",
-    "teaser": "Tell Prisma which configurations the app actually uses.",
     "blocks": [
       {
         "type": "code",
@@ -155,13 +178,17 @@
       },
       {
         "type": "paragraph",
-        "text": "We never configured global field omissions. The third type argument, `undefined`, makes that explicit; `omit?: never` prevents the options from contradicting it. These are type changes. The runtime configuration stays the same."
+        "text": "The expensive part was not the number of lines in the constructor. Prisma’s inferred type described global field-omission configurations we never used. When the client crossed transaction and extension boundaries, TypeScript had to expand and compare those model types."
       },
       {
         "type": "paragraph",
-        "text": "We applied this to all five constructors, aligned extension inputs, and narrowed a helper to the model it actually used. The measured gain came from that combined change. Check your generated Prisma definitions before copying the generic positions: the constructor and the exported type alias use different ones."
+        "text": "The third constructor type argument, `undefined`, makes “no global omissions” explicit. `omit?: never` stops the options from contradicting that contract. Neither changes the runtime data. We applied the same contract to all five constructors and extension inputs, then narrowed a helper to the one model it used. The measured gain came from the combined change."
+      },
+      {
+        "type": "paragraph",
+        "text": "Check your generated Prisma definitions before copying the generic positions: the constructor and exported type alias use different ones. We added a compile-time check to catch the omission type widening again and compared emitted JavaScript. When measuring, keep the compiler and cold-cache settings fixed and inspect `--extendedDiagnostics`; otherwise a warm run can look like a type optimization."
       }
     ],
-    "title": "Show me the change"
+    "title": "Code"
   }
 ]
