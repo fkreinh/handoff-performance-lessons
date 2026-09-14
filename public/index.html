@@ -1741,29 +1741,17 @@ function handleDismiss() {
                 create a lot of work if every change rewrites the whole thing.
               </p>
             <!-- deep-dive:persistence:start -->
-<details class="deep-dive" id="persistence-implementation"><summary><span class="deep-title">Under the hood</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>Queue and storage configuration</span><button type="button" class="deep-copy" aria-label="Copy code: Queue and storage configuration. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Queue and storage configuration"><code><span class="dd-remove">-maxQueueSize: 200,</span>
-<span class="dd-add">+maxQueueSize: 30,</span>
-<span class="dd-add">+customStorage: createPostHogStorage(),</span></code></pre></figure>
-<figure class="deep-code"><figcaption><span>setItem and drainWrites excerpts; reads and retries omitted</span><button type="button" class="deep-copy" aria-label="Copy code: setItem and drainWrites excerpts; reads and retries omitted. Example 2.">Copy</button></figcaption><pre tabindex="0" aria-label="setItem and drainWrites excerpts; reads and retries omitted"><code>// Every new snapshot replaces the pending one for this key.
-pendingValues.set(key, value);
-const inFlightWrite = inFlightWrites.get(key);
-if (inFlightWrite != null) return inFlightWrite;
-const write = drainWrites(key).finally(() =&gt; inFlightWrites.delete(key));
-inFlightWrites.set(key, write);
-return write;
+<details class="deep-dive" id="persistence-implementation"><summary><span class="deep-title">Under the hood</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>Simplified example: createLatestWriter represents our coalescing helper</span><button type="button" class="deep-copy" aria-label="Copy code: Simplified example: createLatestWriter represents our coalescing helper. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Simplified example: createLatestWriter represents our coalescing helper"><code>const persist = createLatestWriter(writeToDisk);
 
-// One writer drains the latest pending value for each file.
-async function drainWrites(key: string) {
-  while (pendingValues.has(key)) {
-    const value = pendingValues.get(key);
-    pendingValues.delete(key);
-    if (value == null) continue;
-    await new File(Paths.document, key).write(value);
-  }
-}</code></pre></figure>
-<p>If A is being written while B and C arrive, write A, then C. Each value is a complete snapshot of the queue, so C replaces B without losing the events it still contains. This would be wrong for a stream of independent events: the optimization depends on newer snapshots superseding older ones.</p>
-<p>We track one active writer per storage key. New calls replace the pending value and join that write instead of launching another one. The writer drains the latest value, and <code>finally</code> releases its slot. The full adapter also handled failures, including a newer value arriving while the active write failed; those paths are omitted here.</p>
-<p>Changing the queue limit was not enough for existing installs. We also trimmed oversized persisted queues when loading them. And this adapter received strings that PostHog had already serialized, so it could bound retained copies without avoiding every JSON conversion. Removing duplicate events reduced the work before it reached storage.</p></div></details>
+persist([&quot;event-a&quot;]);                     // Starts writing
+persist([&quot;event-a&quot;, &quot;event-b&quot;]);          // Waits
+persist([&quot;event-a&quot;, &quot;event-b&quot;, &quot;event-c&quot;]); // Replaces waiting snapshot
+
+// While the first write is still running:
+// Disk writes: [a], then [a, b, c]</code></pre></figure>
+<p>While one write is running, keep only the newest snapshot waiting behind it. The intermediate copy can go because the latest snapshot already contains its events. Here, the calls overlap before the first write finishes; the helper writes that first snapshot, then the latest one.</p>
+<p>This works because each value replaces the whole stored queue. For independent events that each need to be written, dropping the middle one would lose data. Our adapter applied this per storage key, so unrelated files could still write independently.</p>
+<p>This bounds the write backlog. It does not remove the cost of creating each snapshot—that is why reducing duplicate events and shrinking the queue mattered too. The example uses arrays to make the behavior visible; PostHog passed our adapter strings it had already serialized.</p></div></details>
 <!-- deep-dive:persistence:end -->
 </section>
             <section class="essay-section">

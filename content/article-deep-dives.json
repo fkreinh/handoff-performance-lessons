@@ -118,27 +118,21 @@
     "blocks": [
       {
         "type": "code",
-        "language": "diff",
-        "label": "Queue and storage configuration",
-        "code": "-maxQueueSize: 200,\n+maxQueueSize: 30,\n+customStorage: createPostHogStorage(),"
-      },
-      {
-        "type": "code",
         "language": "typescript",
-        "label": "setItem and drainWrites excerpts; reads and retries omitted",
-        "code": "// Every new snapshot replaces the pending one for this key.\npendingValues.set(key, value);\nconst inFlightWrite = inFlightWrites.get(key);\nif (inFlightWrite != null) return inFlightWrite;\nconst write = drainWrites(key).finally(() => inFlightWrites.delete(key));\ninFlightWrites.set(key, write);\nreturn write;\n\n// One writer drains the latest pending value for each file.\nasync function drainWrites(key: string) {\n  while (pendingValues.has(key)) {\n    const value = pendingValues.get(key);\n    pendingValues.delete(key);\n    if (value == null) continue;\n    await new File(Paths.document, key).write(value);\n  }\n}"
+        "label": "Simplified example: createLatestWriter represents our coalescing helper",
+        "code": "const persist = createLatestWriter(writeToDisk);\n\npersist([\"event-a\"]);                     // Starts writing\npersist([\"event-a\", \"event-b\"]);          // Waits\npersist([\"event-a\", \"event-b\", \"event-c\"]); // Replaces waiting snapshot\n\n// While the first write is still running:\n// Disk writes: [a], then [a, b, c]"
       },
       {
         "type": "paragraph",
-        "text": "If A is being written while B and C arrive, write A, then C. Each value is a complete snapshot of the queue, so C replaces B without losing the events it still contains. This would be wrong for a stream of independent events: the optimization depends on newer snapshots superseding older ones."
+        "text": "While one write is running, keep only the newest snapshot waiting behind it. The intermediate copy can go because the latest snapshot already contains its events. Here, the calls overlap before the first write finishes; the helper writes that first snapshot, then the latest one."
       },
       {
         "type": "paragraph",
-        "text": "We track one active writer per storage key. New calls replace the pending value and join that write instead of launching another one. The writer drains the latest value, and `finally` releases its slot. The full adapter also handled failures, including a newer value arriving while the active write failed; those paths are omitted here."
+        "text": "This works because each value replaces the whole stored queue. For independent events that each need to be written, dropping the middle one would lose data. Our adapter applied this per storage key, so unrelated files could still write independently."
       },
       {
         "type": "paragraph",
-        "text": "Changing the queue limit was not enough for existing installs. We also trimmed oversized persisted queues when loading them. And this adapter received strings that PostHog had already serialized, so it could bound retained copies without avoiding every JSON conversion. Removing duplicate events reduced the work before it reached storage."
+        "text": "This bounds the write backlog. It does not remove the cost of creating each snapshot—that is why reducing duplicate events and shrinking the queue mattered too. The example uses arrays to make the behavior visible; PostHog passed our adapter strings it had already serialized."
       }
     ],
     "title": "Under the hood"
