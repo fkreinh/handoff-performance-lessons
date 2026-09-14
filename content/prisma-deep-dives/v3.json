@@ -1,0 +1,30 @@
+{
+  "version": "v3",
+  "direction": "The recipe",
+  "title": "Try this in your codebase",
+  "teaser": "A four-step recipe for finding and checking unnecessary Prisma type work.",
+  "blocks": [
+    {
+      "type": "paragraph",
+      "text": "1. Save a cold baseline. Run your type check with `--incremental false --extendedDiagnostics`. Record total time, check time, and instantiations. Keep the compiler, generated client, dependencies, machine, and settings fixed for the comparison. Instantiations count compiler work, not runtime objects."
+    },
+    {
+      "type": "paragraph",
+      "text": "2. Check what you actually configure. We never used global field omissions, so we made that constraint explicit. If you use global `omit`, preserve it. Inspect your generated client's declarations before adapting this example: generic positions depend on the Prisma version. Keep your existing adapter setup and logging configuration."
+    },
+    {
+      "type": "code",
+      "language": "typescript",
+      "label": "Our generated client, with the existing adapter helper",
+      "code": "import { PrismaClient, type Prisma } from \"./generated/prisma/client\";\nimport { createPrismaAdapter } from \"./prismaAdapter\";\n\ntype AppPrismaClientOptions = Prisma.PrismaClientOptions & {\n  log: Array<Prisma.LogLevel | Prisma.LogDefinition>;\n  omit?: never;\n};\n\nconst client = new PrismaClient<\n  AppPrismaClientOptions, \"query\", undefined\n>({\n  adapter: createPrismaAdapter(),\n  log: [{ level: \"query\", emit: \"event\" }],\n});\n\n// The exported type alias has different generic positions.\ntype AppClient = PrismaClient<never, undefined>;"
+    },
+    {
+      "type": "paragraph",
+      "text": "3. Follow the client through your helpers. Apply the same omission contract at each constructor and extension boundary. For helpers that use one model, request that model: our document-number helper accepts `Pick<Prisma.TransactionClient, \"organizationSequence\">`. The `undefined` above is a type argument; it does not remove fields at runtime."
+    },
+    {
+      "type": "paragraph",
+      "text": "4. Verify, then remeasure. Add a type regression check for the omission contract, run transaction and extension tests, and compare emitted JavaScript. Repeat the cold baseline. Our gain came from the combined changes; a smaller helper signature alone does not promise the same result."
+    }
+  ]
+}

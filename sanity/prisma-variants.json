@@ -1,0 +1,651 @@
+[
+  {
+    "_type": "engineeringDeepDive",
+    "_key": "prisma-v1",
+    "title": "The constructor change",
+    "teaser": "The small type change, before and after.",
+    "body": [
+      {
+        "_type": "engineeringCode",
+        "_key": "b0",
+        "language": "diff",
+        "label": "The relevant changes, combined into one excerpt",
+        "code": "+import type { Prisma } from \"./generated/prisma/client\"\n import { PrismaClient } from \"./generated/prisma/client\"\n \n+type AppPrismaClientOptions = Prisma.PrismaClientOptions & {\n+    log: Array<Prisma.LogLevel | Prisma.LogDefinition>\n+    omit?: never\n+}\n+\n-const basePrismaClient = new PrismaClient({\n+const basePrismaClient = new PrismaClient<\n+    AppPrismaClientOptions,\n+    \"query\",\n+    undefined\n+>({\n     adapter: createPrismaAdapter(),\n     log: [{ level: \"query\", emit: \"event\" }],\n })"
+      },
+      {
+        "_type": "block",
+        "_key": "b1",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "We never configure global field omissions. But the inferred client type covered every possible omission map. When that client crossed transaction and extension boundaries, TypeScript expanded and compared model payloads for configurations we did not use.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b2",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "The third constructor type argument, ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "undefined",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": ", makes “no global omissions” explicit. It is a type argument: it does not remove fields from query results. ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s3",
+            "text": "omit?: never",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s4",
+            "text": " keeps the options consistent with that promise by rejecting an omission map. We still accept Prisma’s other options and declare the logging options our clients use.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b3",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "We applied this contract to all five constructors and aligned extension inputs. In our generated client, those inputs use ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "PrismaClient<never, undefined>",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": ", with two explicit type arguments; the constructor uses three. Check your generated types before copying those positions, especially after a Prisma upgrade.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b4",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "The measured speedup includes those changes and a narrower document-number helper input. Across all eight changed implementation files, the emitted JavaScript was identical.",
+            "marks": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "_type": "engineeringDeepDive",
+    "_key": "prisma-v2",
+    "title": "Follow the expensive type across the boundary",
+    "teaser": "How compiler diagnostics exposed a Prisma configuration we never used.",
+    "body": [
+      {
+        "_type": "block",
+        "_key": "b0",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "Almost 60 million type instantiations. That was the clue. The cold compiler diagnostics counted generic type work, not objects created by our application.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "engineeringCode",
+        "_key": "b1",
+        "language": "shell",
+        "label": "Cold diagnostics with Go TypeScript 7.0.2; --singleThreaded is version-specific",
+        "code": "node_modules/.bin/tsc -p tsconfig.typecheck.json --noEmit \\\n  --singleThreaded --incremental false --extendedDiagnostics"
+      },
+      {
+        "_type": "block",
+        "_key": "b2",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "The mismatch was in the Prisma types. Our application client’s inferred global-omit generic described every possible omission map, although we never configured global omissions. Across transaction and extension boundaries, TypeScript expanded and compared model payloads under different configurations.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b3",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "The fix described what our application already did. We narrowed all five constructors and aligned the extension inputs:",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "engineeringCode",
+        "_key": "b4",
+        "language": "typescript",
+        "label": "Narrow construction and the extension input",
+        "code": "export type AppPrismaClientOptions = Prisma.PrismaClientOptions & {\n    log: Array<Prisma.LogLevel | Prisma.LogDefinition>\n    omit?: never\n}\n\nconst basePrismaClient = new PrismaClient<AppPrismaClientOptions, \"query\", undefined>({\n    adapter: createPrismaAdapter(),\n    log: [{ level: \"query\", emit: \"event\" }],\n})\n\ntype LimitableClient = Pick<PrismaClient<never, undefined>, \"$extends\">"
+      },
+      {
+        "_type": "block",
+        "_key": "b5",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "Our generated version uses three explicit constructor type arguments, two in the type alias. Check your generated definitions before copying. The ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "undefined",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": " here changes no runtime data.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b6",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "The document-number helper also asked for an entire transaction client while using just one delegate. Its parameter became ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "Pick<Prisma.TransactionClient, \"organizationSequence\">",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": ".",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b7",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "With the same compiler and cold-check settings, the combined changes brought instantiations to roughly seven million. A type regression check guarded the omission configuration; emitted JavaScript matched across eight implementation files. The useful question: what possibilities are your types asking the compiler to consider that your application never uses?",
+            "marks": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "_type": "engineeringDeepDive",
+    "_key": "prisma-v3",
+    "title": "Try this in your codebase",
+    "teaser": "A four-step recipe for finding and checking unnecessary Prisma type work.",
+    "body": [
+      {
+        "_type": "block",
+        "_key": "b0",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "1. Save a cold baseline. Run your type check with ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "--incremental false --extendedDiagnostics",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": ". Record total time, check time, and instantiations. Keep the compiler, generated client, dependencies, machine, and settings fixed for the comparison. Instantiations count compiler work, not runtime objects.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b1",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "2. Check what you actually configure. We never used global field omissions, so we made that constraint explicit. If you use global ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "omit",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": ", preserve it. Inspect your generated client's declarations before adapting this example: generic positions depend on the Prisma version. Keep your existing adapter setup and logging configuration.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "engineeringCode",
+        "_key": "b2",
+        "language": "typescript",
+        "label": "Our generated client, with the existing adapter helper",
+        "code": "import { PrismaClient, type Prisma } from \"./generated/prisma/client\";\nimport { createPrismaAdapter } from \"./prismaAdapter\";\n\ntype AppPrismaClientOptions = Prisma.PrismaClientOptions & {\n  log: Array<Prisma.LogLevel | Prisma.LogDefinition>;\n  omit?: never;\n};\n\nconst client = new PrismaClient<\n  AppPrismaClientOptions, \"query\", undefined\n>({\n  adapter: createPrismaAdapter(),\n  log: [{ level: \"query\", emit: \"event\" }],\n});\n\n// The exported type alias has different generic positions.\ntype AppClient = PrismaClient<never, undefined>;"
+      },
+      {
+        "_type": "block",
+        "_key": "b3",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "3. Follow the client through your helpers. Apply the same omission contract at each constructor and extension boundary. For helpers that use one model, request that model: our document-number helper accepts ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "Pick<Prisma.TransactionClient, \"organizationSequence\">",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": ". The ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s3",
+            "text": "undefined",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s4",
+            "text": " above is a type argument; it does not remove fields at runtime.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b4",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "4. Verify, then remeasure. Add a type regression check for the omission contract, run transaction and extension tests, and compare emitted JavaScript. Repeat the cold baseline. Our gain came from the combined changes; a smaller helper signature alone does not promise the same result.",
+            "marks": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "_type": "engineeringDeepDive",
+    "_key": "prisma-v4",
+    "title": "Why a small type can create so much work",
+    "teaser": "Make types describe the configuration you use and the capabilities a function needs.",
+    "body": [
+      {
+        "_type": "block",
+        "_key": "b0",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "A short type name can describe a lot of possibilities. Our inferred Prisma client included every possible global field-omission map, even though we never configured global omissions. Those possibilities affected the types of model results throughout the client.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b1",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "When that client crossed a transaction or extension boundary, TypeScript had to establish that the types were compatible. A few shared entry points could therefore trigger comparisons across huge model payloads. The amount of source code was a poor guide to the amount of checking work.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b2",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "We made the actual configuration explicit at all five constructors and aligned the extension inputs. Here is one constructor excerpt; ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "adapter",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": " is the existing database adapter:",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "engineeringCode",
+        "_key": "b3",
+        "language": "typescript",
+        "label": "Describe the configuration the application actually uses",
+        "code": "import { PrismaClient, type Prisma } from \"./generated/prisma/client\";\n\ntype AppPrismaClientOptions = Prisma.PrismaClientOptions & {\n  log: Array<Prisma.LogLevel | Prisma.LogDefinition>;\n  omit?: never;\n};\n\nconst client = new PrismaClient<\n  AppPrismaClientOptions, \"query\", undefined\n>({\n  adapter,\n  log: [{ level: \"query\", emit: \"event\" }],\n});"
+      },
+      {
+        "_type": "block",
+        "_key": "b4",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "Here, ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "undefined",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": " is a type argument describing no global omissions. It changes no data at runtime. These generic positions belong to our generated Prisma version; check yours before copying.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b5",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "We also narrowed the document-number helper to the one model delegate it uses:",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "engineeringCode",
+        "_key": "b6",
+        "language": "typescript",
+        "label": "Describe only the capability the helper needs",
+        "code": "type DocumentNumberClient = Pick<\n  Prisma.TransactionClient, \"organizationSequence\"\n>;"
+      },
+      {
+        "_type": "block",
+        "_key": "b7",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "Both changes follow the same principle: ask the compiler to prove only what your application requires. The measured improvement came from the combined changes, not this ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "Pick",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": " alone.",
+            "marks": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "_type": "engineeringDeepDive",
+    "_key": "prisma-v5",
+    "title": "Keep the faster types honest",
+    "teaser": "A small compile-time guard catches the expensive default creeping back in.",
+    "body": [
+      {
+        "_type": "block",
+        "_key": "b0",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "We made “no global field omissions” a testable contract. The client options prohibit configuring ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "omit",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": " with ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s3",
+            "text": "omit?: never",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s4",
+            "text": "; a compile-time guard checks that the resulting clients still carry ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s5",
+            "text": "undefined",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s6",
+            "text": " for global omission after extensions are applied.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "engineeringCode",
+        "_key": "b1",
+        "language": "typescript",
+        "label": "Focused excerpt from our type regression test",
+        "code": "import { expectTypeOf, it } from \"vitest\"\nimport type { PrismaClient } from \"./generated/prisma/client\"\nimport type { prisma, basePrisma } from \"./prismaClient\"\n\ntype GlobalOmitOf<T> =\n    T extends PrismaClient<infer _Log, infer GlobalOmit>\n        ? GlobalOmit\n        : never\n\nit(\"keeps global omission undefined\", () => {\n    expectTypeOf<\n        GlobalOmitOf<PrismaClient<never, { user: { email: true } }>>\n    >().toEqualTypeOf<{ user: { email: true } }>()\n    expectTypeOf<GlobalOmitOf<typeof prisma>>().toBeUndefined()\n    expectTypeOf<GlobalOmitOf<typeof basePrisma>>().toBeUndefined()\n})"
+      },
+      {
+        "_type": "block",
+        "_key": "b2",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "The first expectation proves the helper can extract an actual omission map. The next two catch the global-omit type widening again, including through an extension boundary. Our full test covers the integration clients too. Include this file in the compiler check: running Vitest alone does not validate these type expectations.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b3",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "That guard protects the type contract, not database behavior. We also ran the relevant transaction and numbering tests and compared emitted JavaScript: all eight changed implementation files were identical. The ",
+            "marks": []
+          },
+          {
+            "_type": "span",
+            "_key": "s1",
+            "text": "undefined",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "_type": "span",
+            "_key": "s2",
+            "text": " here is a type argument; it does not remove fields at runtime.",
+            "marks": []
+          }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "b4",
+        "style": "normal",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "Revisit the guard when enabling global omission or upgrading Prisma. This excerpt uses our generated client’s type alias with two explicit type arguments; its constructor has a different signature. Inspect your generated types before copying it. If the configuration changes, update the contract with it.",
+            "marks": []
+          }
+        ]
+      }
+    ]
+  }
+]

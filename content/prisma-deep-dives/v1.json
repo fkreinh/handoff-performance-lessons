@@ -1,0 +1,30 @@
+{
+  "version": "v1",
+  "direction": "The diff",
+  "title": "The constructor change",
+  "teaser": "The small type change, before and after.",
+  "blocks": [
+    {
+      "type": "code",
+      "language": "diff",
+      "label": "The relevant changes, combined into one excerpt",
+      "code": "+import type { Prisma } from \"./generated/prisma/client\"\n import { PrismaClient } from \"./generated/prisma/client\"\n \n+type AppPrismaClientOptions = Prisma.PrismaClientOptions & {\n+    log: Array<Prisma.LogLevel | Prisma.LogDefinition>\n+    omit?: never\n+}\n+\n-const basePrismaClient = new PrismaClient({\n+const basePrismaClient = new PrismaClient<\n+    AppPrismaClientOptions,\n+    \"query\",\n+    undefined\n+>({\n     adapter: createPrismaAdapter(),\n     log: [{ level: \"query\", emit: \"event\" }],\n })"
+    },
+    {
+      "type": "paragraph",
+      "text": "We never configure global field omissions. But the inferred client type covered every possible omission map. When that client crossed transaction and extension boundaries, TypeScript expanded and compared model payloads for configurations we did not use."
+    },
+    {
+      "type": "paragraph",
+      "text": "The third constructor type argument, `undefined`, makes \u201cno global omissions\u201d explicit. It is a type argument: it does not remove fields from query results. `omit?: never` keeps the options consistent with that promise by rejecting an omission map. We still accept Prisma\u2019s other options and declare the logging options our clients use."
+    },
+    {
+      "type": "paragraph",
+      "text": "We applied this contract to all five constructors and aligned extension inputs. In our generated client, those inputs use `PrismaClient<never, undefined>`, with two explicit type arguments; the constructor uses three. Check your generated types before copying those positions, especially after a Prisma upgrade."
+    },
+    {
+      "type": "paragraph",
+      "text": "The measured speedup includes those changes and a narrower document-number helper input. Across all eight changed implementation files, the emitted JavaScript was identical."
+    }
+  ]
+}

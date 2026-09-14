@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="description" content="Five optional engineering deep dives into the Prisma type changes behind a faster TypeScript check.">
+  <title>Five ways to go deeper — Handoff Engineering</title>
+  <style>
+    @font-face{font-family:Instrument;src:url(/serif.woff2) format('woff2');font-display:swap}
+    @font-face{font-family:DM;src:url(/sans.woff2) format('woff2');font-weight:100 900;font-display:swap}
+    :root{--bg:#f6f4ee;--ink:#252920;--muted:#707367;--line:#dedfd4;--orange:#bc4e2b;--green:#3c5747;--paper:#fffef9}
+    *{box-sizing:border-box}html{scroll-padding-top:24px}body{margin:0;background:var(--bg);color:var(--ink);font-family:DM,system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:inherit}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible,summary:focus-visible,pre:focus-visible{outline:3px solid var(--orange);outline-offset:5px}
+    header{border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:20px;padding:23px 4.4vw}.brand{font-weight:750;font-size:23px;text-decoration:none;letter-spacing:-.7px}.back{font-size:12px;text-decoration:none;color:var(--muted)}main{max-width:780px;margin:0 auto;padding:66px 28px 80px}.eyebrow{text-transform:uppercase;font-size:10px;letter-spacing:1.7px;color:var(--orange);font-weight:700;margin:0 0 20px}h1{font-family:Instrument,Georgia,serif;font-size:clamp(40px,6vw,61px);font-weight:400;line-height:1.06;letter-spacing:-1.4px;margin:0 0 23px;max-width:650px}.intro{font-size:16px;line-height:1.7;max-width:620px;color:var(--muted);margin:0}.context{margin:32px 0 42px;padding:22px 25px;border-left:2px solid var(--green);background:#eeeee5}.context-label{color:var(--green);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700}.context p{margin:10px 0 0;font-size:15px;line-height:1.75}.options-label{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:11px;margin-bottom:20px}.text-button{background:none;border:0;padding:8px 0;color:var(--green);font-size:12px;text-decoration:underline;text-underline-offset:3px}.option{margin-bottom:23px;scroll-margin-top:24px}.option-meta{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);padding:0 3px 9px}.meta-dot{padding:0 8px;opacity:.5}details{border:1px solid var(--line);border-radius:8px;background:var(--paper);overflow:hidden}summary{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px;cursor:pointer;list-style:none}summary::-webkit-details-marker{display:none}summary:hover{background:#f1f1e8}.summary-title{font-size:18px;line-height:1.35;font-weight:650;display:block;letter-spacing:-.3px}.teaser{font-size:13px;color:var(--muted);line-height:1.55;display:block;margin-top:7px;max-width:560px}.plus{position:relative;flex:0 0 24px;height:24px;border:1px solid var(--line);border-radius:50%}.plus:before,.plus:after{content:'';position:absolute;background:var(--green);left:7px;top:11px;width:8px;height:1px}.plus:after{transform:rotate(90deg)}details[open] .plus:after{display:none}details[open] summary{border-bottom:1px solid var(--line)}.body{padding:5px 25px 24px}.body p{font-size:15px;line-height:1.8;margin:21px 0}.body h3{font-size:15px;line-height:1.5;margin:27px 0 10px;font-weight:700}.body p code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.82em;background:#eeeee5;padding:2px 4px;border-radius:3px;overflow-wrap:anywhere}.code-block{margin:23px -1px;background:#242a24;color:#e9eddf;border:1px solid #343e32;border-radius:6px;overflow:hidden}.code-block figcaption{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:9px 15px;border-bottom:1px solid #41493d;color:#b8c3b0;font-size:11px}.copy-code{border:1px solid #64705c;border-radius:4px;padding:4px 9px;background:none;color:#e9eddf;font-size:10px}.copy-code:hover{background:#3c4836}pre{margin:0;padding:18px 16px;overflow-x:auto;font-size:12px;line-height:1.8;tab-size:2;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}pre code{font:inherit}.addition{color:#bde1a6}.removal{color:#efb3a3}.option-footer{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:28px;padding-top:21px;border-top:1px solid var(--line)}.choose{border:1px solid var(--green);border-radius:5px;padding:10px 16px;background:transparent;color:var(--green);font-size:12px;font-weight:600}.choose:hover,.choose[aria-pressed=true]{background:var(--green);color:var(--paper)}.option-footer a{font-size:11px;color:var(--muted);text-decoration:none}.selected details{border-color:var(--green)}.selected .option-meta{color:var(--green)}.selection-note{border-top:1px solid var(--line);padding-top:22px;margin-top:32px;color:var(--muted);font-size:12px;line-height:1.6;min-height:44px}.selection-note button{margin-left:10px}footer{margin-top:40px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:20px}footer a{text-decoration:none}#status{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:11px 17px;font-size:12px;border-radius:6px;z-index:3;pointer-events:none}#status:empty{display:none}
+    @media(max-width:520px){header{padding:19px 20px}.brand{font-size:20px}.back{font-size:11px}main{padding:40px 19px 50px}h1{letter-spacing:-1px}.context{padding:18px;margin:26px 0 30px}summary{padding:20px 17px;gap:13px}.summary-title{font-size:17px}.body{padding:2px 17px 20px}.body p{font-size:14px}.code-block{margin-left:-7px;margin-right:-7px}pre{font-size:11px;padding:15px 12px}.option-footer{gap:10px}.option-footer a{font-size:10px}.selection-note button{margin:8px 0 0;display:block}}
+    @media(prefers-reduced-motion:no-preference){summary,.choose{transition:background .15s}}
+    @media print{header,.options-label,.option-footer,.selection-note,footer,.copy-code{display:none}body{background:white}main{max-width:none;padding:0}details{break-inside:avoid}pre{white-space:pre-wrap;overflow-wrap:anywhere}}
+  </style>
+</head>
+<body>
+<header><a class="brand" href="/">handoff</a><a class="back" href="/">← Back to the article</a></header>
+<main>
+  <p class="eyebrow">Editorial review · Prisma / TypeScript</p>
+  <h1>A little deeper,<br>if you want.</h1>
+  <p class="intro">Same story. Five ways to open up the implementation. Each accordion is an alternative for the bonus section—choose the one you’d want to keep reading.</p>
+  <aside class="context" aria-label="Excerpt from the article"><span class="context-label">Bonus: 53 million fewer type instantiations</span><p>Our Prisma types described configurations we didn't use. Narrowing them in just a few files brought that same check down to <strong>13 seconds</strong>, with <strong>53 million fewer type instantiations</strong> and identical JavaScript. With a warm cache, small edits can type-check in about <strong>2 seconds</strong>.</p></aside>
+  <div class="options-label"><span>Five versions · one section</span><button class="text-button" type="button" id="expand-all">Expand all</button></div>
+  <!-- ACCORDIONS -->
+  <div class="selection-note" id="selection-note" aria-live="polite">Your choice stays in this browser. Copy it to share which version you prefer.</div>
+  <footer><span>Handoff Engineering · Draft</span><a href="/">Read the full article ↗</a></footer>
+</main>
+<div id="status" role="status" aria-live="polite"></div>
+<script>
+  const storageKey = 'prisma-deep-dive-choice';
+  const choices = [...document.querySelectorAll('.choose')];
+  const panels = [...document.querySelectorAll('details')];
+  const expandButton = document.getElementById('expand-all');
+  const note = document.getElementById('selection-note');
+  let statusTimer;
+  function announce(text) {
+    document.getElementById('status').textContent = text;
+    clearTimeout(statusTimer);
+    statusTimer = setTimeout(() => { document.getElementById('status').textContent = ''; }, 2600);
+  }
+  async function copy(text, button) {
+    try {
+      await navigator.clipboard.writeText(text);
+      const previous = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = previous; }, 1800);
+      announce('Copied to clipboard');
+    } catch { announce('Copy unavailable. Select the text and copy it manually.'); }
+  }
+  document.querySelectorAll('.copy-code').forEach((button) => button.addEventListener('click', () => copy(button.closest('figure').querySelector('code').textContent, button)));
+  function select(version, persist = true) {
+    if (!choices.some((button) => button.dataset.version === version)) return;
+    for (const button of choices) {
+      const selected = button.dataset.version === version;
+      button.setAttribute('aria-pressed', String(selected));
+      button.textContent = selected ? `${version.toUpperCase()} selected ✓` : `Choose ${button.dataset.version.toUpperCase()}`;
+      button.closest('.option').classList.toggle('selected', selected);
+    }
+    let saved = !persist;
+    if (persist) { try { localStorage.setItem(storageKey, version); saved = true; } catch {} }
+    const title = document.querySelector(`#${version} .summary-title`).textContent;
+    note.replaceChildren();
+    note.append(document.createTextNode(`${version.toUpperCase()} selected${saved ? ' · saved in this browser' : ' · selected for this visit'}. `));
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'text-button'; button.textContent = 'Copy my choice';
+    button.addEventListener('click', () => copy(`My Prisma deep-dive choice: ${version.toUpperCase()} — ${title}\n${location.origin}${location.pathname}#${version}`, button));
+    note.append(button);
+  }
+  choices.forEach((button) => button.addEventListener('click', () => select(button.dataset.version)));
+  try { select(localStorage.getItem(storageKey), false); } catch {}
+  function updateExpand() { expandButton.textContent = panels.every((panel) => panel.open) ? 'Collapse all' : 'Expand all'; }
+  expandButton.addEventListener('click', () => { const open = !panels.every((panel) => panel.open); panels.forEach((panel) => { panel.open = open; }); updateExpand(); });
+  panels.forEach((panel) => panel.addEventListener('toggle', updateExpand));
+  function openLinkedVersion() {
+    const version = location.hash.slice(1);
+    if (/^v[1-5]$/.test(version)) document.getElementById(version).querySelector('details').open = true;
+  }
+  window.addEventListener('hashchange', openLinkedVersion);
+  openLinkedVersion();
+</script>
+</body>
+</html>

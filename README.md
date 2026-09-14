@@ -27,3 +27,9 @@ npx wrangler@4.131.1 deploy
 ```
 
 Only `public/` is deployed. Authentication stays in Wrangler's local credential store, outside this repository. Keep the HTML and Markdown in sync when editing the article.
+
+## Compare optional deep dives
+
+[Review five Prisma accordion versions](https://handoff-performance-lessons.fkrein.workers.dev/prisma-deep-dives/). The original article remains separate.
+
+Edit `content/prisma-deep-dives/v1.json` through `v5.json`, then run `node scripts/build-deep-dives.mjs` to refresh the static review page. A future Sanity schema and matching Portable Text objects are in `sanity/`; see [the handoff notes](sanity/README.md). The review page works without JavaScript; JavaScript adds code copying, bulk expansion, and a local preference. Choices are stored only in the reader's browser.

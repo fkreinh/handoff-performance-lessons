@@ -1,0 +1,44 @@
+{
+  "version": "v2",
+  "direction": "the investigation",
+  "title": "Follow the expensive type across the boundary",
+  "teaser": "How compiler diagnostics exposed a Prisma configuration we never used.",
+  "blocks": [
+    {
+      "type": "paragraph",
+      "text": "Almost 60 million type instantiations. That was the clue. The cold compiler diagnostics counted generic type work, not objects created by our application."
+    },
+    {
+      "type": "code",
+      "language": "shell",
+      "label": "Cold diagnostics with Go TypeScript 7.0.2; --singleThreaded is version-specific",
+      "code": "node_modules/.bin/tsc -p tsconfig.typecheck.json --noEmit \\\n  --singleThreaded --incremental false --extendedDiagnostics"
+    },
+    {
+      "type": "paragraph",
+      "text": "The mismatch was in the Prisma types. Our application client’s inferred global-omit generic described every possible omission map, although we never configured global omissions. Across transaction and extension boundaries, TypeScript expanded and compared model payloads under different configurations."
+    },
+    {
+      "type": "paragraph",
+      "text": "The fix described what our application already did. We narrowed all five constructors and aligned the extension inputs:"
+    },
+    {
+      "type": "code",
+      "language": "typescript",
+      "label": "Narrow construction and the extension input",
+      "code": "export type AppPrismaClientOptions = Prisma.PrismaClientOptions & {\n    log: Array<Prisma.LogLevel | Prisma.LogDefinition>\n    omit?: never\n}\n\nconst basePrismaClient = new PrismaClient<AppPrismaClientOptions, \"query\", undefined>({\n    adapter: createPrismaAdapter(),\n    log: [{ level: \"query\", emit: \"event\" }],\n})\n\ntype LimitableClient = Pick<PrismaClient<never, undefined>, \"$extends\">"
+    },
+    {
+      "type": "paragraph",
+      "text": "Our generated version uses three explicit constructor type arguments, two in the type alias. Check your generated definitions before copying. The `undefined` here changes no runtime data."
+    },
+    {
+      "type": "paragraph",
+      "text": "The document-number helper also asked for an entire transaction client while using just one delegate. Its parameter became `Pick<Prisma.TransactionClient, \"organizationSequence\">`."
+    },
+    {
+      "type": "paragraph",
+      "text": "With the same compiler and cold-check settings, the combined changes brought instantiations to roughly seven million. A type regression check guarded the omission configuration; emitted JavaScript matched across eight implementation files. The useful question: what possibilities are your types asking the compiler to consider that your application never uses?"
+    }
+  ]
+}

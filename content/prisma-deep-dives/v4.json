@@ -1,0 +1,44 @@
+{
+  "version": "v4",
+  "direction": "The mental model",
+  "title": "Why a small type can create so much work",
+  "teaser": "Make types describe the configuration you use and the capabilities a function needs.",
+  "blocks": [
+    {
+      "type": "paragraph",
+      "text": "A short type name can describe a lot of possibilities. Our inferred Prisma client included every possible global field-omission map, even though we never configured global omissions. Those possibilities affected the types of model results throughout the client."
+    },
+    {
+      "type": "paragraph",
+      "text": "When that client crossed a transaction or extension boundary, TypeScript had to establish that the types were compatible. A few shared entry points could therefore trigger comparisons across huge model payloads. The amount of source code was a poor guide to the amount of checking work."
+    },
+    {
+      "type": "paragraph",
+      "text": "We made the actual configuration explicit at all five constructors and aligned the extension inputs. Here is one constructor excerpt; `adapter` is the existing database adapter:"
+    },
+    {
+      "type": "code",
+      "language": "typescript",
+      "label": "Describe the configuration the application actually uses",
+      "code": "import { PrismaClient, type Prisma } from \"./generated/prisma/client\";\n\ntype AppPrismaClientOptions = Prisma.PrismaClientOptions & {\n  log: Array<Prisma.LogLevel | Prisma.LogDefinition>;\n  omit?: never;\n};\n\nconst client = new PrismaClient<\n  AppPrismaClientOptions, \"query\", undefined\n>({\n  adapter,\n  log: [{ level: \"query\", emit: \"event\" }],\n});"
+    },
+    {
+      "type": "paragraph",
+      "text": "Here, `undefined` is a type argument describing no global omissions. It changes no data at runtime. These generic positions belong to our generated Prisma version; check yours before copying."
+    },
+    {
+      "type": "paragraph",
+      "text": "We also narrowed the document-number helper to the one model delegate it uses:"
+    },
+    {
+      "type": "code",
+      "language": "typescript",
+      "label": "Describe only the capability the helper needs",
+      "code": "type DocumentNumberClient = Pick<\n  Prisma.TransactionClient, \"organizationSequence\"\n>;"
+    },
+    {
+      "type": "paragraph",
+      "text": "Both changes follow the same principle: ask the compiler to prove only what your application requires. The measured improvement came from the combined changes, not this `Pick` alone."
+    }
+  ]
+}

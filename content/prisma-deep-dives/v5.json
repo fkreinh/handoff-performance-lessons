@@ -1,0 +1,30 @@
+{
+  "version": "v5",
+  "direction": "The regression guard",
+  "title": "Keep the faster types honest",
+  "teaser": "A small compile-time guard catches the expensive default creeping back in.",
+  "blocks": [
+    {
+      "type": "paragraph",
+      "text": "We made \u201cno global field omissions\u201d a testable contract. The client options prohibit configuring `omit` with `omit?: never`; a compile-time guard checks that the resulting clients still carry `undefined` for global omission after extensions are applied."
+    },
+    {
+      "type": "code",
+      "language": "typescript",
+      "label": "Focused excerpt from our type regression test",
+      "code": "import { expectTypeOf, it } from \"vitest\"\nimport type { PrismaClient } from \"./generated/prisma/client\"\nimport type { prisma, basePrisma } from \"./prismaClient\"\n\ntype GlobalOmitOf<T> =\n    T extends PrismaClient<infer _Log, infer GlobalOmit>\n        ? GlobalOmit\n        : never\n\nit(\"keeps global omission undefined\", () => {\n    expectTypeOf<\n        GlobalOmitOf<PrismaClient<never, { user: { email: true } }>>\n    >().toEqualTypeOf<{ user: { email: true } }>()\n    expectTypeOf<GlobalOmitOf<typeof prisma>>().toBeUndefined()\n    expectTypeOf<GlobalOmitOf<typeof basePrisma>>().toBeUndefined()\n})"
+    },
+    {
+      "type": "paragraph",
+      "text": "The first expectation proves the helper can extract an actual omission map. The next two catch the global-omit type widening again, including through an extension boundary. Our full test covers the integration clients too. Include this file in the compiler check: running Vitest alone does not validate these type expectations."
+    },
+    {
+      "type": "paragraph",
+      "text": "That guard protects the type contract, not database behavior. We also ran the relevant transaction and numbering tests and compared emitted JavaScript: all eight changed implementation files were identical. The `undefined` here is a type argument; it does not remove fields at runtime."
+    },
+    {
+      "type": "paragraph",
+      "text": "Revisit the guard when enabling global omission or upgrading Prisma. This excerpt uses our generated client\u2019s type alias with two explicit type arguments; its constructor has a different signature. Inspect your generated types before copying it. If the configuration changes, update the contract with it."
+    }
+  ]
+}
