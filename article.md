@@ -86,19 +86,9 @@ Our Prisma types described configurations we didn't use. Narrowing them in just 
 
 That's a big win for AI coding too. Less waiting between editing and checking means a much better feedback loop. Check `--extendedDiagnostics` before accepting slow checks as normal. Even a faster compiler benefits from less work.
 
-## The small wins add up
-
-These are some of the most memorable ones. But performance is often death by a hundred paper cuts: a missing database index, another observer, another hidden render, another copy of the same data. Each looks harmless until they add up.
-
-We chip away at it whenever we can. There are hundreds of smaller fixes across the team: one less render, a tighter query, less work on the JS thread. That steady work shapes how the product feels every day.
-
-Not all fast software is good, but [all good software is fast](https://x.com/tobi/status/1787139157078188180). Contractors should be able to get their work done without waiting on ours.
-
-That's the standard we strive for at Handoff.
-
 <!-- deep-dive:all:start -->
 <details>
-<summary>Under the hood</summary>
+<summary>The code changes themselves were small. Here are a few examples, if you’re curious.</summary>
 
 ### Count the calculations
 
@@ -298,3 +288,13 @@ Check your generated Prisma definitions before copying the generic positions: th
 
 </details>
 <!-- deep-dive:all:end -->
+
+## The small wins add up
+
+These are some of the most memorable ones. But performance is often death by a hundred paper cuts: a missing database index, another observer, another hidden render, another copy of the same data. Each looks harmless until they add up.
+
+We chip away at it whenever we can. There are hundreds of smaller fixes across the team: one less render, a tighter query, less work on the JS thread. That steady work shapes how the product feels every day.
+
+Not all fast software is good, but [all good software is fast](https://x.com/tobi/status/1787139157078188180). Contractors should be able to get their work done without waiting on ours.
+
+That's the standard we strive for at Handoff.

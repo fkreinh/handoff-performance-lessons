@@ -11,19 +11,27 @@ function blockHtml(block, index) {
   const code = block.language === 'diff' ? block.code.split('\n').map((line) => `<span class="${line.startsWith('+') ? 'dd-add' : line.startsWith('-') ? 'dd-remove' : 'dd-context'}">${escape(line)}</span>`).join('\n') : escape(block.code);
   return `<figure class="deep-code"><figcaption><span>${escape(block.label)}</span><button type="button" class="deep-copy" aria-label="Copy code: ${escape(block.label)}. Example ${index + 1}.">Copy</button></figcaption><pre tabindex="0" aria-label="${escape(block.label)}"><code>${code}</code></pre></figure>`;
 }
+const noteLabel = 'The code changes themselves were small. Here are a few examples, if you’re curious.';
 const noteHtml = entries.map((entry) => `<div class="deep-note"><h3 id="${entry.section}-implementation">${escape(entry.title)}</h3>${entry.blocks.map(blockHtml).join('\n')}</div>`).join('\n');
-const accordionHtml = `<!-- deep-dive:all:start -->\n<details class="deep-dive" id="under-the-hood"><summary><span class="deep-title">Under the hood</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body">${noteHtml}</div></details>\n<!-- deep-dive:all:end -->\n`;
+const accordionHtml = `<!-- deep-dive:all:start -->\n<details class="deep-dive" id="under-the-hood"><summary>${escape(noteLabel)}</summary><div class="deep-body">${noteHtml}</div></details>\n<!-- deep-dive:all:end -->\n`;
 let html = await readFile(new URL('public/index.html', root), 'utf8');
 html = html.replace(/<!-- deep-dive:([a-z]+):start -->[\s\S]*?<!-- deep-dive:\1:end -->\n/g, '');
-if ((html.match(/<\/article>/g) || []).length !== 1) throw new Error('Expected one article');
-html = html.replace('</article>', `${accordionHtml}</article>`);
+let insertions = 0;
+html = html.replace(/<section\b[^>]*>[\s\S]*?<\/section>/g, (section) => {
+  if (!section.includes('id="dx"')) return section;
+  insertions++;
+  return section.replace('</section>', `${accordionHtml}</section>`);
+});
+if (insertions !== 1) throw new Error('Expected one Prisma section');
 if (!html.includes('href="/deep-dives.css"')) html = html.replace('</head>', '  <link rel="stylesheet" href="/deep-dives.css">\n  </head>');
 if (!html.includes('src="/deep-dives.js"')) html = html.replace('</body>', '  <script src="/deep-dives.js" defer></script>\n  </body>');
 
 let md = await readFile(new URL('article.md', root), 'utf8');
 md = md.replace(/<!-- deep-dive:([a-z]+):start -->[\s\S]*?<!-- deep-dive:\1:end -->\n(?:\n)?/g, '');
 const noteMd = entries.map((entry) => `### ${entry.title}\n\n${entry.blocks.map((block) => block.type === 'paragraph' ? block.text : `_${block.label}_\n\n\`\`\`${block.language}\n${block.code}\n\`\`\``).join('\n\n')}`).join('\n\n');
-md = md.trimEnd() + `\n\n<!-- deep-dive:all:start -->\n<details>\n<summary>Under the hood</summary>\n\n${noteMd}\n\n</details>\n<!-- deep-dive:all:end -->\n`;
+const accordionMd = `<!-- deep-dive:all:start -->\n<details>\n<summary>${noteLabel}</summary>\n\n${noteMd}\n\n</details>\n<!-- deep-dive:all:end -->\n\n`;
+if (!md.includes('## The small wins add up')) throw new Error('Missing conclusion');
+md = md.replace('## The small wins add up', `${accordionMd}## The small wins add up`).trimEnd() + '\n';
 
 const textBlock = (key, text, style = 'normal') => ({
   _type: 'block', _key: key, style, markDefs: [],
@@ -32,7 +40,7 @@ const textBlock = (key, text, style = 'normal') => ({
   })),
 });
 const portable = [{
-  _type: 'engineeringDeepDive', _key: 'under-the-hood', title: 'Under the hood',
+  _type: 'engineeringDeepDive', _key: 'under-the-hood', title: noteLabel,
   body: entries.flatMap((entry) => [
     textBlock(`${entry.section}-heading`, entry.title, 'h3'),
     ...entry.blocks.map((block, index) => block.type === 'code' ? {
@@ -43,4 +51,4 @@ const portable = [{
 await writeFile(new URL('public/index.html', root), html);
 await writeFile(new URL('article.md', root), md);
 await writeFile(new URL('sanity/article-deep-dives.json', root), JSON.stringify(portable, null, 2) + '\n');
-console.log('Built one end-of-article accordion with seven sections in HTML, Markdown, and Portable Text.');
+console.log('Built one native disclosure after the Prisma bonus with seven sections in HTML, Markdown, and Portable Text.');

@@ -1739,31 +1739,8 @@
                 <code>--extendedDiagnostics</code> before accepting slow checks
                 as normal. Even a faster compiler benefits from less work.
               </p>
-            </section>
-            <section class="essay-section">
-              <h2 id="closing">The small wins add up</h2>
-              <p>
-                These are some of the most memorable ones. But performance is
-                often death by a hundred paper cuts: a missing database index,
-                another observer, another hidden render, another copy of the
-                same data. Each looks harmless until they add up.
-              </p>
-              <p>
-                We chip away at it whenever we can. There are hundreds of
-                smaller fixes across the team: one less render, a tighter query,
-                less work on the JS thread. That steady work shapes how the
-                product feels every day.
-              </p>
-              <p>
-                Not all fast software is good, but
-                <a href="https://x.com/tobi/status/1787139157078188180">all good software is fast</a>.
-                Contractors should be able to get their work done without waiting on
-                ours.
-              </p>
-              <p>That&#x27;s the standard we strive for at Handoff.</p>
-            </section>
-          <!-- deep-dive:all:start -->
-<details class="deep-dive" id="under-the-hood"><summary><span class="deep-title">Under the hood</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><div class="deep-note"><h3 id="calculations-implementation">Count the calculations</h3><figure class="deep-code"><figcaption><span>Simplified parent and row resolvers</span><button type="button" class="deep-copy" aria-label="Copy code: Simplified parent and row resolvers. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Simplified parent and row resolvers"><code>async function resolveRows(estimate, rows) {
+            <!-- deep-dive:all:start -->
+<details class="deep-dive" id="under-the-hood"><summary>The code changes themselves were small. Here are a few examples, if you’re curious.</summary><div class="deep-body"><div class="deep-note"><h3 id="calculations-implementation">Count the calculations</h3><figure class="deep-code"><figcaption><span>Simplified parent and row resolvers</span><button type="button" class="deep-copy" aria-label="Copy code: Simplified parent and row resolvers. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Simplified parent and row resolvers"><code>async function resolveRows(estimate, rows) {
   const totals = await calculateEstimate(estimate.id);
   return rows.map((row) =&gt; ({
     ...row,
@@ -1870,7 +1847,30 @@ persist([&quot;event-a&quot;, &quot;event-b&quot;, &quot;event-c&quot;]); // Rep
 <p>The third constructor type argument, <code>undefined</code>, makes “no global omissions” explicit. <code>omit?: never</code> stops the options from contradicting that contract. Neither changes the runtime data. We applied the same contract to all five constructors and extension inputs, then narrowed a helper to the one model it used. The measured gain came from the combined change.</p>
 <p>Check your generated Prisma definitions before copying the generic positions: the constructor and exported type alias use different ones. We added a compile-time check to catch the omission type widening again and compared emitted JavaScript. When measuring, keep the compiler and cold-cache settings fixed and inspect <code>--extendedDiagnostics</code>; otherwise a warm run can look like a type optimization.</p></div></div></details>
 <!-- deep-dive:all:end -->
-</article>
+</section>
+            <section class="essay-section">
+              <h2 id="closing">The small wins add up</h2>
+              <p>
+                These are some of the most memorable ones. But performance is
+                often death by a hundred paper cuts: a missing database index,
+                another observer, another hidden render, another copy of the
+                same data. Each looks harmless until they add up.
+              </p>
+              <p>
+                We chip away at it whenever we can. There are hundreds of
+                smaller fixes across the team: one less render, a tighter query,
+                less work on the JS thread. That steady work shapes how the
+                product feels every day.
+              </p>
+              <p>
+                Not all fast software is good, but
+                <a href="https://x.com/tobi/status/1787139157078188180">all good software is fast</a>.
+                Contractors should be able to get their work done without waiting on
+                ours.
+              </p>
+              <p>That&#x27;s the standard we strive for at Handoff.</p>
+            </section>
+          </article>
         </div>
       </div>
     </main>

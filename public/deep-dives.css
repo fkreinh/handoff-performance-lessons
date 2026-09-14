@@ -1,14 +1,7 @@
-.deep-dive{margin:30px 0 6px;border:1px solid var(--line);border-radius:6px;background:var(--paper);overflow:hidden}
-.deep-dive summary{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 21px;cursor:pointer;list-style:none}
-.deep-dive summary::-webkit-details-marker{display:none}
-.deep-dive summary:hover{background:#eeeee5}
-.deep-title{display:block;font-family:DM,system-ui,sans-serif;font-weight:650;font-size:14px;line-height:1.5;color:var(--green)}
-.deep-toggle{position:relative;flex:0 0 22px;height:22px;border:1px solid var(--line);border-radius:50%}
-.deep-toggle:before,.deep-toggle:after{content:'';position:absolute;left:6px;top:10px;width:8px;height:1px;background:var(--green)}
-.deep-toggle:after{transform:rotate(90deg)}
-.deep-dive[open] .deep-toggle:after{display:none}
-.deep-dive[open] summary{border-bottom:1px solid var(--line)}
-.deep-body{padding:0 21px 5px}
+article .deep-dive{margin:28px 0 0;border:0;border-radius:0;background:transparent;overflow:visible}
+article .deep-dive summary{display:list-item;list-style:revert;cursor:pointer;padding:0;font:inherit;line-height:1.8;color:var(--muted)}
+article .deep-dive summary:hover{color:var(--ink)}
+.deep-body{padding:8px 0 0}
 .deep-note{padding:24px 0 8px}
 .deep-note + .deep-note{border-top:1px solid var(--line)}
 article .deep-note h3{font-family:DM,system-ui,sans-serif;font-size:19px;font-weight:650;line-height:1.4;letter-spacing:-.3px;margin:0 0 20px;color:var(--ink)}
@@ -24,5 +17,5 @@ article .deep-code pre code{font:inherit;color:inherit;background:transparent;pa
 .deep-dive summary:focus-visible,.deep-copy:focus-visible,.deep-code pre:focus-visible{outline:3px solid var(--orange);outline-offset:-3px}
 .deep-dive-status{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);max-width:calc(100vw - 40px);background:var(--ink);color:var(--paper);padding:11px 17px;font-size:12px;line-height:1.5;border-radius:5px;z-index:20;pointer-events:none}
 .deep-dive-status:empty{display:none}
-@media(max-width:600px){.deep-dive{margin-top:25px}.deep-dive summary{padding:13px 15px;gap:12px}.deep-body{padding:0 15px 2px}article .deep-body p{font-size:13px}article .deep-code{margin-left:-5px;margin-right:-5px}article .deep-code pre{font-size:11px;padding:14px 11px}}
+@media(max-width:600px){.deep-dive{margin-top:25px}.deep-body{padding:8px 0 0}article .deep-body p{font-size:13px}article .deep-code{margin-left:0;margin-right:0}article .deep-code pre{font-size:11px;padding:14px 11px}}
 @media print{.deep-copy,.deep-dive-status{display:none}.deep-dive{overflow:visible;break-inside:auto}.deep-dive summary{break-after:avoid}article .deep-code pre{white-space:pre-wrap;overflow-wrap:anywhere}article .deep-code{break-inside:avoid}}
