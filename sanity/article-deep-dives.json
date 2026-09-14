@@ -1,19 +1,33 @@
 [
   {
     "_type": "engineeringDeepDive",
-    "_key": "calculations-implementation",
+    "_key": "under-the-hood",
     "title": "Under the hood",
     "body": [
       {
+        "_type": "block",
+        "_key": "calculations-heading",
+        "style": "h3",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "Count the calculations",
+            "marks": []
+          }
+        ]
+      },
+      {
         "_type": "engineeringCode",
-        "_key": "b0",
+        "_key": "calculations-b0",
         "language": "javascript",
         "label": "Simplified parent and row resolvers",
         "code": "async function resolveRows(estimate, rows) {\n  const totals = await calculateEstimate(estimate.id);\n  return rows.map((row) => ({\n    ...row,\n    precomputedTotal: totals.get(row.id),\n  }));\n}\n\nfunction resolveTotal(row) {\n  if (row.precomputedTotal != null) {\n    return row.precomputedTotal; // Zero is valid too.\n  }\n  return calculateRowTotal(row); // Existing fallback.\n}"
       },
       {
         "_type": "block",
-        "_key": "b1",
+        "_key": "calculations-b1",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -27,7 +41,7 @@
       },
       {
         "_type": "block",
-        "_key": "b2",
+        "_key": "calculations-b2",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -55,7 +69,7 @@
       },
       {
         "_type": "block",
-        "_key": "b3",
+        "_key": "calculations-b3",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -66,31 +80,38 @@
             "marks": []
           }
         ]
-      }
-    ]
-  },
-  {
-    "_type": "engineeringDeepDive",
-    "_key": "cache-implementation",
-    "title": "Under the hood",
-    "body": [
+      },
+      {
+        "_type": "block",
+        "_key": "cache-heading",
+        "style": "h3",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "One missing ID",
+            "marks": []
+          }
+        ]
+      },
       {
         "_type": "engineeringCode",
-        "_key": "b0",
+        "_key": "cache-b0",
         "language": "diff",
         "label": "One of the fragment fixes; unrelated fields omitted",
         "code": " fragment EstimateFragment on Estimate {\n+  id\n   name\n }"
       },
       {
         "_type": "engineeringCode",
-        "_key": "b1",
+        "_key": "cache-b1",
         "language": "diff",
         "label": "The same fix in a manual cache write",
         "code": " data: {\n+  id: messageId,\n   message,\n   role,\n },"
       },
       {
         "_type": "block",
-        "_key": "b2",
+        "_key": "cache-b2",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -118,7 +139,7 @@
       },
       {
         "_type": "block",
-        "_key": "b3",
+        "_key": "cache-b3",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -132,7 +153,7 @@
       },
       {
         "_type": "block",
-        "_key": "b4",
+        "_key": "cache-b4",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -143,31 +164,38 @@
             "marks": []
           }
         ]
-      }
-    ]
-  },
-  {
-    "_type": "engineeringDeepDive",
-    "_key": "navigation-implementation",
-    "title": "Under the hood",
-    "body": [
+      },
+      {
+        "_type": "block",
+        "_key": "navigation-heading",
+        "style": "h3",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "Reset the stack, keep the context",
+            "marks": []
+          }
+        ]
+      },
       {
         "_type": "engineeringCode",
-        "_key": "b0",
+        "_key": "navigation-b0",
         "language": "typescript",
         "label": "Tab reset with retained params; focus guards and state validation omitted",
         "code": "// Once the target root is visible, read its active tab.\nconst root = state.routes[state.index];\nconst tabState = root.state;\nconst activeTab = tabState?.routes[tabState.index];\n\nnavigation.dispatch(CommonActions.reset({\n  index: 0,\n  routes: [{\n    name: \"(tabs)\",\n    state: {\n      index: 0,\n      routes: [{\n        name: selectedTab,\n        params: activeTab?.params,\n      }],\n    },\n  }],\n}));"
       },
       {
         "_type": "engineeringCode",
-        "_key": "b1",
+        "_key": "navigation-b1",
         "language": "diff",
         "label": "The tab bar also passes the destination’s retained params",
         "code": "-navigation.navigate(route.name);\n+navigation.navigate(route.name, route.params);"
       },
       {
         "_type": "block",
-        "_key": "b2",
+        "_key": "navigation-b2",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -181,7 +209,7 @@
       },
       {
         "_type": "block",
-        "_key": "b3",
+        "_key": "navigation-b3",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -195,7 +223,7 @@
       },
       {
         "_type": "block",
-        "_key": "b4",
+        "_key": "navigation-b4",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -206,31 +234,38 @@
             "marks": []
           }
         ]
-      }
-    ]
-  },
-  {
-    "_type": "engineeringDeepDive",
-    "_key": "sheets-implementation",
-    "title": "Under the hood",
-    "body": [
+      },
+      {
+        "_type": "block",
+        "_key": "sheets-heading",
+        "style": "h3",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "Render less, less often",
+            "marks": []
+          }
+        ]
+      },
       {
         "_type": "engineeringCode",
-        "_key": "b0",
+        "_key": "sheets-b0",
         "language": "diff",
         "label": "Simplified from the row-panel change; other props omitted",
         "code": "+<Freeze freeze={!panelOpen}>\n   <RowPanelProvider>\n     <BottomSheet onDismiss={handleDismiss}>\n       <RowForm />\n     </BottomSheet>\n   </RowPanelProvider>\n+</Freeze>"
       },
       {
         "_type": "engineeringCode",
-        "_key": "b1",
+        "_key": "sheets-b1",
         "language": "typescript",
         "label": "Resume before presenting; freeze after dismissal",
         "code": "function openPanel() {\n  setPanelOpen(true);\n  requestAnimationFrame(() => sheetRef.current?.present());\n}\n\nfunction handleDismiss() {\n  setPanelOpen(false);\n}"
       },
       {
         "_type": "block",
-        "_key": "b2",
+        "_key": "sheets-b2",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -244,7 +279,7 @@
       },
       {
         "_type": "block",
-        "_key": "b3",
+        "_key": "sheets-b3",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -258,7 +293,7 @@
       },
       {
         "_type": "block",
-        "_key": "b4",
+        "_key": "sheets-b4",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -269,31 +304,38 @@
             "marks": []
           }
         ]
-      }
-    ]
-  },
-  {
-    "_type": "engineeringDeepDive",
-    "_key": "persistence-implementation",
-    "title": "Under the hood",
-    "body": [
+      },
+      {
+        "_type": "block",
+        "_key": "persistence-heading",
+        "style": "h3",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "The small PostHog queue",
+            "marks": []
+          }
+        ]
+      },
       {
         "_type": "engineeringCode",
-        "_key": "b0",
+        "_key": "persistence-b0",
         "language": "diff",
         "label": "Reduce the queue limit",
         "code": "-maxQueueSize: 200,\n+maxQueueSize: 30,"
       },
       {
         "_type": "engineeringCode",
-        "_key": "b1",
+        "_key": "persistence-b1",
         "language": "typescript",
         "label": "Simplified example: createLatestWriter represents our coalescing helper",
         "code": "const persist = createLatestWriter(writeToDisk);\n\npersist([\"event-a\"]);                     // Starts writing\npersist([\"event-a\", \"event-b\"]);          // Waits\npersist([\"event-a\", \"event-b\", \"event-c\"]); // Replaces waiting snapshot\n\n// While the first write is still running:\n// Disk writes: [a], then [a, b, c]"
       },
       {
         "_type": "block",
-        "_key": "b2",
+        "_key": "persistence-b2",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -307,7 +349,7 @@
       },
       {
         "_type": "block",
-        "_key": "b3",
+        "_key": "persistence-b3",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -321,7 +363,7 @@
       },
       {
         "_type": "block",
-        "_key": "b4",
+        "_key": "persistence-b4",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -332,24 +374,31 @@
             "marks": []
           }
         ]
-      }
-    ]
-  },
-  {
-    "_type": "engineeringDeepDive",
-    "_key": "bundles-implementation",
-    "title": "Under the hood",
-    "body": [
+      },
+      {
+        "_type": "block",
+        "_key": "bundles-heading",
+        "style": "h3",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "The hidden weight of an import",
+            "marks": []
+          }
+        ]
+      },
       {
         "_type": "engineeringCode",
-        "_key": "b0",
+        "_key": "bundles-b0",
         "language": "diff",
         "label": "The underline helper, kept inside the DOM entry",
         "code": "-import { UNDERLINE } from \"@/design-system/RichTextEditor/transformers\";\n+import type { TextFormatTransformer } from \"@lexical/markdown\";\n+\n+const UNDERLINE: TextFormatTransformer = {\n+  format: [\"underline\"],\n+  tag: \"_\",\n+  type: \"text-format\",\n+};"
       },
       {
         "_type": "block",
-        "_key": "b1",
+        "_key": "bundles-b1",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -377,7 +426,7 @@
       },
       {
         "_type": "block",
-        "_key": "b2",
+        "_key": "bundles-b2",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -405,7 +454,7 @@
       },
       {
         "_type": "block",
-        "_key": "b3",
+        "_key": "bundles-b3",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -416,24 +465,31 @@
             "marks": []
           }
         ]
-      }
-    ]
-  },
-  {
-    "_type": "engineeringDeepDive",
-    "_key": "dx-implementation",
-    "title": "Under the hood",
-    "body": [
+      },
+      {
+        "_type": "block",
+        "_key": "dx-heading",
+        "style": "h3",
+        "markDefs": [],
+        "children": [
+          {
+            "_type": "span",
+            "_key": "s0",
+            "text": "Less type work, faster checks",
+            "marks": []
+          }
+        ]
+      },
       {
         "_type": "engineeringCode",
-        "_key": "b0",
+        "_key": "dx-b0",
         "language": "diff",
         "label": "The constructor change; existing runtime options omitted",
         "code": "+type AppPrismaClientOptions = Prisma.PrismaClientOptions & {\n+  log: Array<Prisma.LogLevel | Prisma.LogDefinition>;\n+  omit?: never;\n+};\n+\n-const client = new PrismaClient(options);\n+const client = new PrismaClient<\n+  AppPrismaClientOptions, \"query\", undefined\n+>(options);"
       },
       {
         "_type": "block",
-        "_key": "b1",
+        "_key": "dx-b1",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -447,7 +503,7 @@
       },
       {
         "_type": "block",
-        "_key": "b2",
+        "_key": "dx-b2",
         "style": "normal",
         "markDefs": [],
         "children": [
@@ -489,7 +545,7 @@
       },
       {
         "_type": "block",
-        "_key": "b3",
+        "_key": "dx-b3",
         "style": "normal",
         "markDefs": [],
         "children": [

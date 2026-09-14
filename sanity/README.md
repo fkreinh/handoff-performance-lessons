@@ -20,6 +20,6 @@ The V1–V5 labels, local preference, and comparison controls belong only to thi
 
 Sanity references: [custom object types](https://www.sanity.io/docs/studio/object-type), [Portable Text configuration](https://www.sanity.io/docs/studio/portable-text-editor-configuration).
 
-## Article accordions
+## Article implementation notes
 
-`article-deep-dives.json` holds the seven selected article accordions in article order. Their `_key` values identify the matching section. Insert each object after its section's prose, before the next section heading. The source is `content/article-deep-dives.json`; run `node scripts/build-article-deep-dives.mjs` after editing it to refresh the HTML, Markdown, and Portable Text together. The original five Prisma alternatives remain available on the review page.
+`article-deep-dives.json` contains one `engineeringDeepDive` object. Insert it after the article's conclusion. Its body holds seven headings and the existing code examples and explanations, with no nested accordions. The source is `content/article-deep-dives.json`; run `node scripts/build-article-deep-dives.mjs` after editing it to refresh HTML, Markdown, and Portable Text together. Existing links such as `#persistence-implementation` open the shared accordion at the matching heading. The original five Prisma alternatives remain available on the review page.

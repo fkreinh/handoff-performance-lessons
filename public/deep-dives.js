@@ -24,8 +24,11 @@
   });
   const panels = [...document.querySelectorAll('.deep-dive')];
   const openLinkedPanel = () => {
-    const panel = panels.find((item) => `#${item.id}` === location.hash);
-    if (panel) panel.open = true;
+    const target = document.getElementById(location.hash.slice(1));
+    const panel = target?.closest('.deep-dive');
+    if (!panel) return;
+    panel.open = true;
+    requestAnimationFrame(() => target.scrollIntoView({ block: 'start' }));
   };
   addEventListener('hashchange', openLinkedPanel);
   openLinkedPanel();

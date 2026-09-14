@@ -9,6 +9,9 @@
 .deep-dive[open] .deep-toggle:after{display:none}
 .deep-dive[open] summary{border-bottom:1px solid var(--line)}
 .deep-body{padding:0 21px 5px}
+.deep-note{padding:24px 0 8px}
+.deep-note + .deep-note{border-top:1px solid var(--line)}
+article .deep-note h3{font-family:DM,system-ui,sans-serif;font-size:19px;font-weight:650;line-height:1.4;letter-spacing:-.3px;margin:0 0 20px;color:var(--ink)}
 article .deep-body p{font-size:14px;line-height:1.8;margin:20px 0}
 .deep-body p code{font-size:.83em;overflow-wrap:anywhere}
 article .deep-code{margin:23px 0;background:#242a24;color:#e9eddf;border:1px solid #343e32;border-radius:5px;overflow:hidden;padding:0}
