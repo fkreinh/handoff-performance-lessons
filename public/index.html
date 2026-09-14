@@ -1741,7 +1741,9 @@ function handleDismiss() {
                 create a lot of work if every change rewrites the whole thing.
               </p>
             <!-- deep-dive:persistence:start -->
-<details class="deep-dive" id="persistence-implementation"><summary><span class="deep-title">Under the hood</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>Simplified example: createLatestWriter represents our coalescing helper</span><button type="button" class="deep-copy" aria-label="Copy code: Simplified example: createLatestWriter represents our coalescing helper. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Simplified example: createLatestWriter represents our coalescing helper"><code>const persist = createLatestWriter(writeToDisk);
+<details class="deep-dive" id="persistence-implementation"><summary><span class="deep-title">Under the hood</span><span class="deep-toggle" aria-hidden="true"></span></summary><div class="deep-body"><figure class="deep-code"><figcaption><span>Reduce the queue limit</span><button type="button" class="deep-copy" aria-label="Copy code: Reduce the queue limit. Example 1.">Copy</button></figcaption><pre tabindex="0" aria-label="Reduce the queue limit"><code><span class="dd-remove">-maxQueueSize: 200,</span>
+<span class="dd-add">+maxQueueSize: 30,</span></code></pre></figure>
+<figure class="deep-code"><figcaption><span>Simplified example: createLatestWriter represents our coalescing helper</span><button type="button" class="deep-copy" aria-label="Copy code: Simplified example: createLatestWriter represents our coalescing helper. Example 2.">Copy</button></figcaption><pre tabindex="0" aria-label="Simplified example: createLatestWriter represents our coalescing helper"><code>const persist = createLatestWriter(writeToDisk);
 
 persist([&quot;event-a&quot;]);                     // Starts writing
 persist([&quot;event-a&quot;, &quot;event-b&quot;]);          // Waits

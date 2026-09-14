@@ -118,6 +118,12 @@
     "blocks": [
       {
         "type": "code",
+        "language": "diff",
+        "label": "Reduce the queue limit",
+        "code": "-maxQueueSize: 200,\n+maxQueueSize: 30,"
+      },
+      {
+        "type": "code",
         "language": "typescript",
         "label": "Simplified example: createLatestWriter represents our coalescing helper",
         "code": "const persist = createLatestWriter(writeToDisk);\n\npersist([\"event-a\"]);                     // Starts writing\npersist([\"event-a\", \"event-b\"]);          // Waits\npersist([\"event-a\", \"event-b\", \"event-c\"]); // Replaces waiting snapshot\n\n// While the first write is still running:\n// Disk writes: [a], then [a, b, c]"

@@ -213,6 +213,13 @@ Follow what happens after an append. A small queue can still create a lot of wor
 <details>
 <summary>Under the hood</summary>
 
+_Reduce the queue limit_
+
+```diff
+-maxQueueSize: 200,
++maxQueueSize: 30,
+```
+
 _Simplified example: createLatestWriter represents our coalescing helper_
 
 ```typescript
